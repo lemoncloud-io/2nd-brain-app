@@ -28,14 +28,14 @@ GitHub 설정에서 사람이 한다. 코드에는 없다.
 2. **`v*` 태그 보호** — Settings → Rules 에서 태그 ruleset 으로 `v*` 생성·삭제를 관리자만 하게 한다.
 3. **mac 비밀값** — environment `release` 에 넣는다(레포 비밀값이 아니다).
 
-   | 이름                   | 내용                                                                                                                                |
-   | ---------------------- | ----------------------------------------------------------------------------------------------------------------------------------- |
-   | `MAC_CSC_NAME`         | 인증서 이름. 예: `Developer ID Application: <법인> (<TEAMID>)` — `electron-builder.yml` 의 `mac.identity: null` 을 이 값으로 덮는다 |
-   | `MAC_CSC_LINK`         | Developer ID Application 인증서 `.p12` 의 base64                                                                                    |
-   | `MAC_CSC_KEY_PASSWORD` | 그 `.p12` 암호                                                                                                                      |
-   | `APPLE_API_KEY`        | App Store Connect API 키 `.p8` 파일 **내용** — 워크플로가 임시 파일로 쓰고 끝나면 지운다                                            |
-   | `APPLE_API_KEY_ID`     | 그 키의 ID                                                                                                                          |
-   | `APPLE_API_ISSUER`     | Issuer ID                                                                                                                           |
+   | 이름                   | 내용                                                                                                                                                                  |
+   | ---------------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+   | `MAC_CSC_NAME`         | 인증서 이름. 예: `Developer ID Application: <법인> (<TEAMID>)` — 워크플로가 접두어를 떼고 넘긴다 — `electron-builder.yml` 의 `mac.identity: null` 을 이 값으로 덮는다 |
+   | `MAC_CSC_LINK`         | Developer ID Application 인증서 `.p12` 의 base64                                                                                                                      |
+   | `MAC_CSC_KEY_PASSWORD` | 그 `.p12` 암호                                                                                                                                                        |
+   | `APPLE_API_KEY`        | App Store Connect API 키 `.p8` 파일 **내용** — 워크플로가 임시 파일로 쓰고 끝나면 지운다                                                                              |
+   | `APPLE_API_KEY_ID`     | 그 키의 ID                                                                                                                                                            |
+   | `APPLE_API_ISSUER`     | Issuer ID                                                                                                                                                             |
 
    `MAC_CSC_*` 만 있으면 서명만 하고 공증은 건너뛴다(경고). 공증까지 되면 `spctl -a -vv -t install <앱>` 이 accepted,
    `xcrun stapler validate <dmg>` 가 통과한다.
