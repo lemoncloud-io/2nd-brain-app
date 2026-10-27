@@ -1,0 +1,30 @@
+# 확장 로컬 의존성·생성물 — install.sh 가 만든다
+node_modules/
+**/node_modules/
+.venv/
+**/.venv/
+__pycache__/
+*.pyc
+**/auth.json
+.DS_Store
+
+# Claude Code·pi 플랜·검증 원장 — 같은 머신 전제 (GUIDE.md § 2.3)
+.claude/
+
+# electron-vite 빌드 산출물
+dist
+out
+.eslintcache
+*.log*
+
+test-results/
+
+# 임베딩 모델은 fetch 스크립트 산출물이다 (슬라이스 07)
+resources/models/
+.impeccable/critique/
+.impeccable/ui-backlog.md
+.impeccable/ui-review/
+*.tsbuildinfo
+
+# playwright-mcp 검증 산출물
+.playwright-mcp/

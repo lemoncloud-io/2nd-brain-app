@@ -1,0 +1,5 @@
+#!/bin/sh
+# fake claude: ndjson fixture를 재생하고 끝낸다
+DIR="$(cd "$(dirname "$0")" && pwd)"
+cat "$DIR/run.ndjson"
+exit 0

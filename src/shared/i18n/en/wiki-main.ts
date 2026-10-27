@@ -1,0 +1,51 @@
+import type { wikiMain as ko } from '../ko/wiki-main'
+
+export const wikiMain: typeof ko = {
+  listFailed: "Couldn't read the wiki list",
+  graphFailed: "Couldn't read the graph",
+  docsFailed: "Couldn't read the document list",
+  treeFailed:
+    "Couldn't read the files in your library. Check that you have permission to open the library folder",
+  createFailed: "Couldn't create it",
+  renameFailed: "Couldn't rename or move it",
+  trashFailed: "Couldn't move it to the trash",
+  pageUnreadable: "Can't read this page",
+  historyFailed: "Couldn't read the history",
+  versionMissing: "Couldn't find this version",
+  versionFailed: "Couldn't read this version",
+  attachFailed: "Couldn't add the attachment",
+  mentionsFailed: "Couldn't read the mentions",
+  tagsFailed: "Couldn't read the tags",
+  bookmarkOnlyVault: 'Only documents in your library can be bookmarked',
+  bookmarkFailed: "Couldn't change the bookmark",
+  badPages: 'The page format is not valid',
+  proposeBusy: 'Another library is making a merge suggestion. Press again when it finishes',
+  proposeStopped: 'Stopped the merge suggestion',
+  proposeFailed: "Couldn't make a merge suggestion",
+  badMerge: 'The merge format is not valid',
+  mergeFailed: "Couldn't merge",
+  undoMissing: "Couldn't find the merge to undo",
+  undoFailed: "Couldn't undo it",
+  searchFailed: "Couldn't search the wiki",
+  mergeOnlyWiki: 'Only wiki pages can be merged',
+  pageGone: (name: string): string =>
+    `The page ${name} is gone. It was moved or deleted in the meantime`,
+  mergeSame: "A page can't be merged with itself",
+  aiUnreadable: "Couldn't make sense of the AI's answer — try again",
+  aiCutOff: "The AI's answer was cut off — try again",
+  mergeNoHistory: "This library doesn't keep history, so pages can't be merged",
+  mergeStale: 'The pages changed while the suggestion was being made. Press Merge again',
+  mergeUntracked: "Pages that don't keep history can't be merged",
+  mergeEmpty: 'The merged text is empty',
+  mergeDirty:
+    "Some pages have changes that aren't recorded yet. Save or finish getting team changes, then merge",
+  unrestored: "Files that couldn't be restored (check them yourself)",
+  undoChanged:
+    "There were other changes after the merge, so it can't be undone directly. You can see the old version in the kept page's history",
+  undoUnsaved: 'The merged page has unsaved changes. Save, then undo',
+  queryUnreadable: "Couldn't read the search terms",
+  editMdOnly: 'Only library documents (.md) can be edited',
+  fileGone: 'The file is gone. It was deleted while you were editing',
+  fileChanged: 'The file changed while you were editing. Open it again and edit',
+  textOnly: 'Only text files (txt, code) can be edited here'
+}

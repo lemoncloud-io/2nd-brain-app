@@ -1,0 +1,9 @@
+#!/bin/sh
+i=0
+while [ $i -lt 300 ]; do
+  echo "progress $i xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx"
+  i=$((i+1))
+done
+mkdir -p "$HOME/.local/bin"
+printf '#!/bin/sh\necho "2.1.0 (Claude Code)"\n' > "$HOME/.local/bin/claude"
+chmod +x "$HOME/.local/bin/claude"

@@ -1,0 +1,11 @@
+{"type":"system","subtype":"init","cwd":"/vault","claude_code_version":"2.1.270","permissionMode":"acceptEdits"}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_0172mvmG1HxGXFnNdGcssgRT","name":"Bash","input":{"command":"git status --short","description":"Show working tree status"}}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_0172mvmG1HxGXFnNdGcssgRT","is_error":false,"content":"?? scripts/"}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_01NSTQHzPaEzcg7Zqf7sz2U9","name":"Bash","input":{"command":"python3 scripts/vault_verify.py --help","description":"Show vault verify script help"}}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01NSTQHzPaEzcg7Zqf7sz2U9","is_error":false,"content":"verify ok"}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_01QissPC58GTgVGvZdr1ky8M","name":"Bash","input":{"command":"python3 -c \"print(42)\"","description":"Print 42 with Python"}}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_01QissPC58GTgVGvZdr1ky8M","is_error":true,"content":"This command requires approval"}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"tool_use","id":"toolu_0114z6uzdnPZ182UYagckMcH","name":"Write","input":{"file_path":"/vault/note.md","content":"hi\n"}}]}}
+{"type":"user","message":{"role":"user","content":[{"type":"tool_result","tool_use_id":"toolu_0114z6uzdnPZ182UYagckMcH","is_error":null,"content":"File created successfully at: /vault/note.md (file state is current in your context — no need to Read it back)"}]}}
+{"type":"assistant","message":{"role":"assistant","content":[{"type":"text","text":"1. `git status --short`: allowed\n2. `python3 scripts/vault_verify.py --help`: allowed\n3. `python3 -c \"print(42)\"`: denied\n4. Write note.md: allowed"}]}}
+{"type":"result","subtype":"success","is_error":false,"num_turns":5,"result":"1. `git status --short`: allowed\n2. `python3 scripts/vault_verify.py --help`: allowed\n3. `python3 -c \"print(42)\"`: denied\n4. Write note.md: allowed","permission_denials":[{"tool_name":"Bash","tool_input":{"command":"python3 -c \"print(42)\""}}]}

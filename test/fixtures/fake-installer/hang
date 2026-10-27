@@ -1,0 +1,6 @@
+#!/bin/sh
+# 끝나지 않는 설치 — 손자 프로세스까지 띄워 그룹 종료를 확인한다
+echo "$$" > "$HOME/installer.pid"
+sleep 600 &
+echo "$!" > "$HOME/child.pid"
+wait

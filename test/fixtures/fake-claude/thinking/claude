@@ -1,0 +1,4 @@
+#!/bin/sh
+# fake claude: 녹화한 thinking 실행(claude 2.x, MAX_THINKING_TOKENS) 출력을 그대로 낸다 — thinking 문구는 비어 있다
+cat > /dev/null
+cat "$(dirname "$0")/../../claude-ndjson/thinking.ndjson"

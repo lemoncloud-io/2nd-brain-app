@@ -1,0 +1,147 @@
+#!/usr/bin/env node
+// fake codex (켜 둔 채팅 세션): `codex app-server` 의 줄 모양(codex-cli 0.163.0 실측 — `jsonrpc` 필드 없음)을 흉내 낸다.
+// initialize → thread/start·thread/resume → 턴마다 turn/start. 질문 글로 동작을 고른다 — 기억해 <말>·무엇을 기억해·천천히·죽어
+// FAKE_CODEX_SPAWN_LOG: 띄울 때마다 인자 한 줄 · FAKE_CODEX_REQUEST_LOG: 받은 요청 한 줄씩(method + 요약)
+// FAKE_CODEX_OLD: app-server 를 모르는 옛 codex 처럼 곧바로 끝난다 · thread/resume `gone`: 없는 thread
+// FAKE_CODEX_RESUME_FAIL_ONCE: 첫 thread/resume 만 다른 이유(설정 오류)로 실패한다
+// FAKE_CODEX_HANG: initialize 에 답하지 않는다 · FAKE_CODEX_COMPACT_ITEM: 압축을 thread/compacted 대신
+// contextCompaction item 으로만 알리고 turn 알림 없이 끝낸다(타입 정의가 thread/compacted 를 deprecated 로 둔다)
+const { appendFileSync, existsSync } = require('node:fs')
+const readline = require('node:readline')
+let resumeFailed = false
+
+const args = process.argv.slice(2)
+if (args[0] === '--version') {
+  console.log('codex-cli 0.163.0')
+  process.exit(0)
+}
+if (args[0] === 'login') {
+  process.stderr.write('Logged in using ChatGPT\n')
+  process.exit(0)
+}
+const log = (file, line) => {
+  if (file) appendFileSync(file, line + '\n')
+}
+log(process.env.FAKE_CODEX_SPAWN_LOG, args.join(' '))
+if (args[0] !== 'app-server' || process.env.FAKE_CODEX_OLD) {
+  process.stderr.write("error: unrecognized subcommand 'app-server'\n")
+  process.exit(2)
+}
+
+const out = (obj) => process.stdout.write(JSON.stringify(obj) + '\n')
+const notify = (method, params) => out({ method, params })
+let thread = null
+let resumed = false
+let remembered = null
+let turnNo = 0
+let running = null
+
+const finish = (status, error = null) => {
+  if (running === null) return
+  if (running.timer) clearTimeout(running.timer)
+  notify('turn/completed', { threadId: thread, turn: { id: running.id, items: [], status, error } })
+  running = null
+}
+const say = (text) => {
+  notify('item/agentMessage/delta', { threadId: thread, turnId: running.id, itemId: 'msg', delta: text })
+}
+
+const startTurn = (params) => {
+  const text = params.input.filter((i) => i.type === 'text').map((i) => i.text).join(' ')
+  const images = params.input.filter((i) => i.type === 'localImage')
+  const id = `turn-${++turnNo}`
+  running = { id, timer: null }
+  notify('turn/started', { threadId: thread, turn: { id, items: [], status: 'inProgress', error: null } })
+  const remember = /기억해 (\S+)/.exec(text)
+  if (remember) {
+    remembered = remember[1]
+    say('OK')
+    return finish('completed')
+  }
+  if (text.includes('무엇을 기억해')) {
+    say(remembered ?? '모름')
+    return finish('completed')
+  }
+  if (text.includes('천천히')) {
+    say('세는 중')
+    running.timer = setTimeout(() => {
+      say('다 셌다')
+      finish('completed')
+    }, 5000)
+    return
+  }
+  if (text.includes('조용히')) return
+  if (text.includes('죽어')) {
+    process.stderr.write('fake codex crashed\n')
+    process.exit(1)
+  }
+  if (text.includes('한도')) {
+    notify('error', { threadId: thread, turnId: id, willRetry: false, error: { message: 'usage limit reached' } })
+    return finish('failed', { message: 'usage limit reached' })
+  }
+  if (text.includes('명령 실행')) {
+    notify('item/started', { threadId: thread, turnId: id, item: { type: 'commandExecution', id: 'cmd', command: 'ls wiki' } })
+  }
+  const seen = images.map((i) => `[image ${existsSync(i.path) ? 'ok' : 'missing'}]`).join('')
+  say(`답: ${text}${seen ? ' ' + seen : ''}${resumed ? ' (이어짐)' : ''}`)
+  finish('completed')
+}
+
+readline.createInterface({ input: process.stdin }).on('line', (line) => {
+  let msg
+  try {
+    msg = JSON.parse(line)
+  } catch {
+    return
+  }
+  if (msg.id === undefined) return
+  const p = msg.params ?? {}
+  const summary =
+    msg.method === 'turn/start'
+      ? [p.sandboxPolicy?.type ?? '-', p.model ?? '-', ...p.input.filter((i) => i.type === 'localImage').map((i) => i.path)].join(' ')
+      : msg.method === 'thread/start' || msg.method === 'thread/resume'
+        ? `${p.threadId ?? '-'} ${p.sandbox ?? '-'} ${p.approvalPolicy ?? '-'} ${p.developerInstructions ?? '-'}`
+        : ''
+  log(process.env.FAKE_CODEX_REQUEST_LOG, `${msg.method} ${summary}`.trim())
+  const reply = (result) => out({ id: msg.id, result })
+  switch (msg.method) {
+    case 'initialize':
+      if (process.env.FAKE_CODEX_HANG) return
+      return reply({ userAgent: 'fake/0.163.0', codexHome: '/tmp', platformFamily: 'unix', platformOs: 'macos' })
+    case 'thread/start':
+      thread = 'thread-fake'
+      return reply({ thread: { id: thread } })
+    case 'thread/resume':
+      if (process.env.FAKE_CODEX_RESUME_FAIL_ONCE && !resumeFailed) {
+        resumeFailed = true
+        return out({ id: msg.id, error: { code: -32603, message: 'invalid config: model' } })
+      }
+      if (p.threadId === 'gone') {
+        return out({ id: msg.id, error: { code: -32600, message: 'no rollout found for thread id gone' } })
+      }
+      thread = p.threadId
+      resumed = true
+      return reply({ thread: { id: thread } })
+    case 'turn/start':
+      reply({ turn: { id: `turn-${turnNo + 1}`, items: [], status: 'inProgress', error: null } })
+      return startTurn(p)
+    case 'turn/interrupt':
+      reply({})
+      return finish('interrupted')
+    case 'thread/compact/start':
+      reply({})
+      if (process.env.FAKE_CODEX_COMPACT_ITEM) {
+        return notify('item/completed', {
+          threadId: thread,
+          turnId: 'compact',
+          item: { type: 'contextCompaction', id: 'cc' }
+        })
+      }
+      running = { id: `turn-${++turnNo}`, timer: null }
+      notify('turn/started', { threadId: thread, turn: { id: running.id, items: [], status: 'inProgress', error: null } })
+      notify('thread/compacted', { threadId: thread, turnId: running.id })
+      return finish('completed')
+    default:
+      return out({ id: msg.id, error: { code: -32601, message: `unknown method ${msg.method}` } })
+  }
+})

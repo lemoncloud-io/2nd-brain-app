@@ -1,0 +1,5 @@
+#!/bin/sh
+# fake claude: 자식 프로세스를 띄우고 기다린다 — 취소가 프로세스 트리까지 끝내는지 본다
+sleep 30 &
+echo $! > child.pid
+wait

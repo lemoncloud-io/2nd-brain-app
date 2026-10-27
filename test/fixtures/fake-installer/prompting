@@ -1,0 +1,11 @@
+#!/bin/sh
+# 가짜 Codex 설치기 — 벤더 install.sh 처럼 CODEX_NON_INTERACTIVE 가 없으면 사용자에게 묻는 자리다.
+# 앱은 답할 수 없으니 그 자리를 실패로 흉내 낸다. 변수가 있으면 공식 위치에 CLI 를 놓는다.
+case "$CODEX_NON_INTERACTIVE" in
+  1 | true | yes) ;;
+  *) echo "Start Codex now? [y/N]" >&2; exit 2 ;;
+esac
+mkdir -p "$HOME/.local/bin"
+printf '#!/bin/sh\necho "codex-cli 0.155.1"\n' > "$HOME/.local/bin/codex"
+chmod +x "$HOME/.local/bin/codex"
+echo "Codex CLI 0.155.1 installed successfully."

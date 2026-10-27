@@ -1,0 +1,7 @@
+#!/bin/sh
+# fake claude: init 이 모델을 안 알렸고 modelUsage 는 둘이다 — 어느 창인지 모르는 자리
+cat <<'JSON'
+{"type":"system","subtype":"init","session_id":"s-3","cwd":"/vault"}
+{"type":"result","subtype":"success","is_error":false,"usage":{"input_tokens":100},"modelUsage":{"claude-haiku-4-5-20251001":{"contextWindow":200000},"claude-opus-5[1m]":{"contextWindow":1000000}}}
+JSON
+exit 0

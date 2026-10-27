@@ -1,0 +1,9 @@
+#!/bin/sh
+# fake claude: stdin 프롬프트와 받은 인자를 기록한다 — CLI 호출 계약 확인
+# 승인을 주고받는 실행(--input-format stream-json)은 stdin 을 열어 둔 채 기다리므로 첫 줄만 읽는다
+case " $* " in
+  *" --input-format stream-json "*) IFS= read -r line; printf '%s\n' "$line" > stdin.txt ;;
+  *) cat > stdin.txt ;;
+esac
+for arg in "$@"; do printf '%s\n' "$arg"; done > args.txt
+echo '{"type":"result","subtype":"success","is_error":false}'

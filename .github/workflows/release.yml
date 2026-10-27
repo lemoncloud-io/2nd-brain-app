@@ -1,0 +1,150 @@
+name: release
+
+# v* 태그 → mac·win 설치본을 이 레포의 draft Release 에 올린다. 공개는 사람이 GitHub 에서 draft 를 풀어서 한다.
+# 서명 비밀값이 비어 있으면 서명 없이(mac 은 ad-hoc) 올리고 경고만 남긴다 — 비밀값 목록·절차는 docs/RELEASE.md
+# 순서: 빌드(비밀값 없음) → 패키징·서명(서명 비밀값만) → 누출 검사 → 올리기(GH_TOKEN 만). 검사 전에는 아무것도 올리지 않는다
+on:
+  push:
+    tags:
+      - 'v*'
+
+concurrency:
+  group: release-${{ github.ref }}
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  # draft 를 빌드 잡이 만들면 두 잡이 동시에 만들어 draft 가 두 개 생길 수 있다 — 먼저 하나 만들어 둔다
+  prepare:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      # electron-builder 는 package.json version 으로 올릴 릴리스(v<version>)를 찾는다 — 태그와 다르면 엉뚱한 draft 가 생긴다
+      - name: Tag must match package.json version
+        run: |
+          version=$(node -p "require('./package.json').version")
+          if [ "$GITHUB_REF_NAME" != "v$version" ]; then
+            echo "::error::tag $GITHUB_REF_NAME does not match package.json version v$version"
+            exit 1
+          fi
+      # 이미 공개된 릴리스 위에 다시 올리면 조용히 섞인다 — draft 만 이어 쓴다
+      - name: Create the draft release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          # "없음" 만 새로 만든다 — 네트워크·권한 오류까지 없음으로 읽으면 같은 태그의 draft 가 둘 생긴다
+          if draft=$(gh release view "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --json isDraft -q .isDraft 2>err.txt); then
+            if [ "$draft" != "true" ]; then
+              echo "::error::release $GITHUB_REF_NAME is already published — bump the version"
+              exit 1
+            fi
+          elif grep -q 'release not found' err.txt; then
+            gh release create "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --draft --title "$GITHUB_REF_NAME" --notes ''
+          else
+            cat err.txt >&2
+            exit 1
+          fi
+
+  macos:
+    needs: prepare
+    runs-on: macos-latest
+    timeout-minutes: 60
+    # 서명 비밀값은 이 environment 에 둔다 — 필수 리뷰어가 승인해야 서명 잡이 돈다(docs/RELEASE.md § 한 번 할 일)
+    environment: release
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-build
+      - run: pnpm build
+      # 서명은 비밀값이 있을 때만 켠다. electron-builder.yml 의 mac.identity 가 null 이라(로컬 키체인 인증서를 안 쓰게)
+      # 인증서 이름을 -c.mac.identity 로 넘겨야 CSC_LINK 의 인증서로 서명한다. 빈 값은 env 에 넣지 않는다
+      - name: Package and sign when secrets exist
+        env:
+          MAC_CSC_NAME: ${{ secrets.MAC_CSC_NAME }}
+          MAC_CSC_LINK: ${{ secrets.MAC_CSC_LINK }}
+          MAC_CSC_KEY_PASSWORD: ${{ secrets.MAC_CSC_KEY_PASSWORD }}
+          APPLE_API_KEY_P8: ${{ secrets.APPLE_API_KEY }}
+          APPLE_API_KEY_ID: ${{ secrets.APPLE_API_KEY_ID }}
+          APPLE_API_ISSUER: ${{ secrets.APPLE_API_ISSUER }}
+        run: |
+          args=()
+          if [ -n "$MAC_CSC_NAME" ] && [ -n "$MAC_CSC_LINK" ]; then
+            export CSC_LINK="$MAC_CSC_LINK" CSC_KEY_PASSWORD="$MAC_CSC_KEY_PASSWORD"
+            args+=("-c.mac.identity=$MAC_CSC_NAME")
+            # @electron/notarize 의 APPLE_API_KEY 는 .p8 파일 경로다 — 비밀값 내용을 나만 읽는 임시 파일로 쓴다
+            if [ -n "$APPLE_API_KEY_P8" ] && [ -n "$APPLE_API_KEY_ID" ] && [ -n "$APPLE_API_ISSUER" ]; then
+              key="$RUNNER_TEMP/AuthKey_$APPLE_API_KEY_ID.p8"
+              (umask 077 && printf '%s' "$APPLE_API_KEY_P8" > "$key")
+              export APPLE_API_KEY="$key"
+            else
+              unset APPLE_API_KEY_ID APPLE_API_ISSUER
+              echo "::warning::APPLE_API_* secrets missing — signed but not notarized"
+            fi
+          else
+            unset APPLE_API_KEY_ID APPLE_API_ISSUER
+            export CSC_IDENTITY_AUTO_DISCOVERY=false
+            echo "::warning::MAC_CSC_* secrets missing — unsigned (ad-hoc) build"
+          fi
+          pnpm exec electron-builder --mac dmg zip --publish never "${args[@]}"
+      - name: Remove the notarization key
+        if: always()
+        run: rm -f "$RUNNER_TEMP"/AuthKey_*.p8
+      - name: Upload to the draft
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --clobber \
+            dist/*.dmg dist/*.dmg.blockmap dist/*-mac.zip dist/*-mac.zip.blockmap dist/latest-mac.yml
+
+  windows:
+    needs: prepare
+    runs-on: windows-latest
+    timeout-minutes: 60
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@11d5960a326750d5838078e36cf38b85af677262 # v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-build
+      # Windows 서명은 아직 없다 — 인증서 종류(Azure Trusted Signing·클라우드 HSM)를 정한 뒤 붙인다(docs/RELEASE.md)
+      - run: pnpm build:win --publish never
+      - name: Upload to the draft
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          gh release upload "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --clobber \
+            dist/*-setup.exe dist/*-setup.exe.blockmap dist/latest.yml
+
+  # 업데이터가 읽는 것까지 다 올라갔는지 — 하나라도 빠지면 그 OS 의 자동 업데이트가 조용히 멈춘다
+  assets:
+    needs: [macos, windows]
+    runs-on: ubuntu-latest
+    # draft 는 쓰기 권한이 있어야 보인다
+    permissions:
+      contents: write
+    steps:
+      - name: Draft has installers and update manifests
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          names=$(gh release view "$GITHUB_REF_NAME" -R "$GITHUB_REPOSITORY" --json assets -q '.assets[].name')
+          echo "$names"
+          missing=0
+          for pattern in '\.dmg$' '-mac\.zip$' '^latest-mac\.yml$' '-setup\.exe$' '^latest\.yml$'; do
+            if ! grep -Eq -- "$pattern" <<<"$names"; then
+              echo "::error::missing release asset matching $pattern"
+              missing=1
+            fi
+          done
+          exit "$missing"

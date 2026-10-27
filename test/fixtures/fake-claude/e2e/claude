@@ -1,0 +1,195 @@
+#!/bin/sh
+# fake claude (e2e): --version·auth status 에 로그인 상태로 답하고, -p 는 프롬프트로 분기한다.
+# 위키화 초안은 "Output contract" 프롬프트에 @@ 블록으로 답한다(파일 쓰기는 앱이 코드로 한다)
+set -e
+# 받은 인자를 한 줄로 남긴다 — e2e 가 설정한 모델이 CLI 로 가는지 본다.
+# 시스템 프롬프트 인자는 여러 줄이라 줄바꿈을 띄어쓰기로 접는다 — 실행 한 번 = 한 줄
+if [ -n "$FAKE_CLAUDE_ARGS_LOG" ]; then printf '%s' "$*" | tr '\n' ' ' >> "$FAKE_CLAUDE_ARGS_LOG"; echo >> "$FAKE_CLAUDE_ARGS_LOG"; fi
+case "$1" in
+  --version)
+    echo "2.1.270 (Claude Code)"
+    exit 0
+    ;;
+  auth)
+    # 로그아웃을 겪어 보려면 상태가 남아야 한다 — 파일 하나로 "끊긴 뒤" 를 흉내 낸다
+    if [ "$2" = "logout" ]; then
+      if [ -n "$FAKE_CLAUDE_LOGOUT_FLAG" ]; then : > "$FAKE_CLAUDE_LOGOUT_FLAG"; fi
+      echo "Logged out"
+      exit 0
+    fi
+    if [ -n "$FAKE_CLAUDE_LOGOUT_FLAG" ] && [ -f "$FAKE_CLAUDE_LOGOUT_FLAG" ]; then
+      echo '{"loggedIn":false}'
+      exit 0
+    fi
+    echo '{"loggedIn":true,"authMethod":"claude.ai","email":"e2e@example.com"}'
+    exit 0
+    ;;
+esac
+
+# 턴 하나 — 받은 질문($prompt)과 띄운 인자($ARGS)로 답 줄을 낸다. per-run(-p)과 켜 둔 세션이 같이 쓴다
+answer() {
+      # 받은 질문을 그대로 남긴다 — e2e 가 질문이 지시문·검색 문서 없이 그대로 가는지 본다
+      if [ -n "$FAKE_CLAUDE_PROMPT_LOG" ]; then printf '%s' "$prompt" > "$FAKE_CLAUDE_PROMPT_LOG"; fi
+      # 노트 쓰기(슬라이스 04) — 오늘 노트를 만들고, 범위 밖 위키도 몰래 고친다(앱이 되돌려야 한다)
+      case "$ARGS" in
+        *"--permission-prompt-tool"*)
+          case "$prompt" in
+            *"오늘 노트 만들어"*)
+              today="$(date +%Y-%m-%d)"
+              mkdir -p private
+              printf '# %s\n\n## 오늘 할 일\n\n- [ ] 계획 세우기\n' "$today" > "private/$today.md"
+              printf '\n엔진이 몰래 고친 줄\n' >> wiki/INDEX.md
+              echo '{"type":"system","subtype":"init","session_id":"sess-e2e-note"}'
+              echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"'$PWD'/private/'$today'.md"}}]}}'
+              echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Edit","input":{"file_path":"'$PWD'/wiki/INDEX.md"}}]}}'
+              echo '{"type":"assistant","message":{"content":[{"type":"text","text":"오늘 노트를 만들었다"}]}}'
+              echo '{"type":"result","subtype":"success","is_error":false}'
+              return 0
+              ;;
+            # 고친 곳 검토 — 떨어진 두 줄을 고친다
+            *"계획 두 곳 고쳐"*)
+              printf '# 계획\n\n- 하나 고침\n- 둘\n- 셋\n- 넷 고침\n' > outputs/plan.md
+              echo '{"type":"system","subtype":"init","session_id":"sess-e2e-note"}'
+              echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"'$PWD'/outputs/plan.md"}}]}}'
+              echo '{"type":"assistant","message":{"content":[{"type":"text","text":"계획 두 곳을 고쳤다"}]}}'
+              echo '{"type":"result","subtype":"success","is_error":false}'
+              return 0
+              ;;
+          esac
+          ;;
+      esac
+      echo '{"type":"system","subtype":"init","session_id":"sess-e2e-chat"}'
+      # 위키화 초안(파이프라인) — @@ 블록 둘(keep·drop)로 답한다. 파일 쓰기는 앱이 코드로 한다.
+      # Write 도구 이벤트는 흉내만 낸다(진행 기록 표시용) — 파일을 직접 쓰지 않는다
+      case "$prompt" in
+        *"Output contract"*)
+          echo '{"type":"system","subtype":"init","session_id":"sess-e2e-draft"}'
+          echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"wiki/keep-page.md"}}]}}'
+          echo '{"type":"assistant","message":{"content":[{"type":"tool_use","name":"Write","input":{"file_path":"wiki/drop-page.md"}}]}}'
+          printf '%s\n' '{"type":"assistant","message":{"content":[{"type":"text","text":"@@ wiki/keep-page.md\n---\ntype: concept\ntopics: []\nstatus: draft\n---\n# Keep Page\n\n## Summary\n\nkeep\n"}]}}'
+          printf '%s\n' '{"type":"assistant","message":{"content":[{"type":"text","text":"@@ wiki/drop-page.md\n---\ntype: concept\ntopics: []\nstatus: draft\n---\n# Drop Page\n\n## Summary\n\ndrop\n"}]}}'
+          echo '{"type":"assistant","message":{"content":[{"type":"text","text":"e2e ingest done"}]}}'
+          echo '{"type":"result","subtype":"success","is_error":false}'
+          return 0
+          ;;
+        # AI 점검(슬라이스 13) — 프롬프트에 LINT 블록 형식이 있으면 lint 프로필로 판별해 블록 답변
+        # 중복 합치기 제안(슬라이스 09) — 합친 본문을 표식 사이에 낸다
+        *"<merged>"*)
+          printf '%s\n' '{"type":"assistant","message":{"content":[{"type":"text","text":"<merged>\n# 머신러닝\n\n지도학습\n\n비지도학습\n</merged>"}]}}'
+          echo '{"type":"result","subtype":"success","is_error":false}'
+          return 0
+          ;;
+        *---LINT:*)
+          if [ -n "$FAKE_CLAUDE_DUPLICATE" ]; then
+            echo '{"type":"assistant","message":{"content":[{"type":"text","text":"---LINT: duplicate|medium|머신러닝 중복|wiki/ml.md + wiki/machine-learning.md---"}]}}'
+            echo '{"type":"assistant","message":{"content":[{"type":"text","text":"두 페이지가 같은 개념이다"}]}}'
+            echo '{"type":"assistant","message":{"content":[{"type":"text","text":"---END LINT---"}]}}'
+            echo '{"type":"result","subtype":"success","is_error":false}'
+            return 0
+          fi
+          # sh echo 가 \n 을 실제 개행으로 풀어 JSON 이 깨진다 — 이벤트를 나눠 낸다
+          echo '{"type":"assistant","message":{"content":[{"type":"text","text":"---LINT: outdated|low|keep 내용 오래됨|wiki/keep-page.md---"}]}}'
+          echo '{"type":"assistant","message":{"content":[{"type":"text","text":"작성일이 오래됐다"}]}}'
+          echo '{"type":"assistant","message":{"content":[{"type":"text","text":"---END LINT---"}]}}'
+          echo '{"type":"result","subtype":"success","is_error":false}'
+          return 0
+          ;;
+      esac
+      # 답이 오기 전에 화면이 무엇을 들고 있는지 보려면 답이 늦어야 한다
+      if [ -n "$FAKE_CLAUDE_SLOW" ]; then sleep 3; fi
+      # 검색은 됐는데 답이 실패하는 경우 — 근거만 담은 말풍선이 남는지 본다
+      if [ -n "$FAKE_CLAUDE_FAIL" ]; then
+        echo '{"type":"result","subtype":"error_during_execution","is_error":true,"result":"한도에 걸렸다","errors":["한도에 걸렸다"]}'
+        return 0
+      fi
+      # 선택 영역 편집 — 고친 글을 표식 사이에 낸다. 고른 글이 실렸는지 보이려고 그 글을 뒤에 붙인다
+      case "$prompt" in
+        *"<replacement> 와 </replacement> 사이"*)
+          picked="$(printf '%s\n' "$prompt" | sed -n '/^<selection>$/{n;p;}')"
+          echo '{"type":"assistant","message":{"content":[{"type":"text","text":"<replacement>AI가 고친 문장 ('"$picked"')</replacement>"}]}}'
+          echo '{"type":"result","subtype":"success","is_error":false}'
+          return 0
+          ;;
+      esac
+      # MCP 서버 — 인자로 받은 서버 허용 규칙과 --mcp-config 유무로 답한다
+      case "$prompt" in
+        *"MCP 서버를 말해"*)
+          rules="$(printf '%s\n' "$ARGS" | grep -o 'mcp__[A-Za-z0-9_-]*__' | sed 's/^mcp__//; s/__$//' | sort -u | tr '\n' ' ')"
+          case "$ARGS" in *--mcp-config*) config=있음 ;; *) config=없음 ;; esac
+          echo '{"type":"assistant","message":{"content":[{"type":"text","text":"MCP: '"${rules:-없음}"' 설정: '"$config"'"}]}}'
+          echo '{"type":"result","subtype":"success","is_error":false}'
+          return 0
+          ;;
+      esac
+      # 붙인 문서(@) — 무엇이 본문째 실렸는지 경로로 답한다
+      case "$prompt" in
+        *"붙인 문서를 말해"*)
+          attached="$(printf '%s\n' "$prompt" | grep -o '<doc path="[^"]*"' | sed 's/<doc path="//; s/"$//' | tr '\n' ' ')"
+          echo '{"type":"assistant","message":{"content":[{"type":"text","text":"붙인 문서: '"${attached:-없음}"'"}]}}'
+          echo '{"type":"result","subtype":"success","is_error":false}'
+          return 0
+          ;;
+      esac
+      case "$ARGS $TURNS" in
+        # 재시작 뒤 대화는 SDK 가 --resume <id> 인자로 이어 붙인다
+        *--resume*|*" 2"|*" 3"|*" 4"|*" 5"|*" 6")
+          echo '{"type":"assistant","message":{"content":[{"type":"text","text":"이어진 답입니다"},{"type":"tool_use","name":"Read","input":{"file_path":"'$PWD'/wiki/keep-page.md"}}]}}'
+          ;;
+        *)
+          echo '{"type":"assistant","message":{"content":[{"type":"text","text":"볼트에서 찾은 답"},{"type":"tool_use","name":"Read","input":{"file_path":"'$PWD'/wiki/keep-page.md"}}]}}'
+          ;;
+      esac
+      echo '{"type":"result","subtype":"success","is_error":false}'
+}
+
+# 켜 둔 채팅 세션(Agent SDK) — 첫 줄 initialize 에 명령 목록으로 답하고, 사용자 줄마다 answer 를 돈다.
+# 프로세스는 stdin 이 닫힐 때까지 산다. 앱 규칙(appendSystemPrompt)은 FAKE_CLAUDE_SYSTEM_LOG 에 남긴다
+case "$*" in
+  *"--permission-prompt-tool=stdio"*)
+    ARGS="$*"
+    TURNS=0
+    tmp="$(mktemp -d)"
+    while IFS= read -r line; do
+      kind="$(printf '%s\n' "$line" | FAKE_TMP="$tmp" perl -MJSON::PP -MMIME::Base64 -ne '
+        binmode STDOUT, ":utf8";
+        my $m = decode_json($_);
+        if ($m->{type} eq "control_request") {
+          if (defined $m->{request}{appendSystemPrompt}) { open my $f, ">", "$ENV{FAKE_TMP}/system"; binmode $f, ":utf8"; print $f $m->{request}{appendSystemPrompt}; close $f }
+          print "control $m->{request}{subtype} $m->{request_id}"; exit
+        }
+        if ($m->{type} ne "user") { print "skip"; exit }
+        my $c = $m->{message}{content};
+        open my $f, ">", "$ENV{FAKE_TMP}/prompt"; binmode $f, ":utf8";
+        if (ref $c) { for my $b (@$c) { if ($b->{type} eq "image") { my $png = decode_base64($b->{source}{data}); my ($w, $h) = $b->{source}{media_type} eq "image/png" ? unpack("NN", substr($png, 16, 8)) : (0, 0); print $f "[image $b->{source}{media_type} ${w}x${h}]\n" } else { print $f $b->{text} } } } else { print $f $c }
+        close $f; print "user"')"
+      case "$kind" in
+        "control initialize "*)
+          if [ -n "$FAKE_CLAUDE_SYSTEM_LOG" ] && [ -f "$tmp/system" ]; then cp "$tmp/system" "$FAKE_CLAUDE_SYSTEM_LOG"; fi
+          echo '{"type":"control_response","response":{"subtype":"success","request_id":"'"${kind##* }"'","response":{"commands":[{"name":"compact","description":"Free up context","argumentHint":"","builtin":true},{"name":"vault-reach","description":"고아 문서를 찾아요","argumentHint":""},{"name":"pdf2md-ingest","description":"","argumentHint":""}],"agents":[],"models":[],"account":{}}}}'
+          ;;
+        control*)
+          echo '{"type":"control_response","response":{"subtype":"success","request_id":"'"${kind##* }"'","response":{}}}'
+          ;;
+        user)
+          TURNS=$((TURNS + 1))
+          prompt="$(cat "$tmp/prompt")"
+          answer
+          ;;
+      esac
+    done
+    rm -rf "$tmp"
+    exit 0
+    ;;
+esac
+
+# 한 번 도는 읽기 전용 실행(위키 초안·선택 영역 고치기) — --allowedTools Read,Glob,Grep 로 판별, stdin 프롬프트에 답한다.
+# 채팅은 위 세션 분기가 받는다
+case "$*" in
+  *"--allowedTools Read,Glob,Grep"*)
+    prompt="$(cat)"
+    ARGS="$*"
+    TURNS=1
+    answer
+    exit 0
+    ;;
+esac

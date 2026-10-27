@@ -1,0 +1,10 @@
+#!/bin/sh
+# fake claude: result 줄은 녹화본 test/fixtures/claude-ndjson/thinking.ndjson 그대로고 init 은
+# 필요한 필드만 남겼다 —
+# modelUsage 에는 제목용 haiku 가 늘 같이 오고(2항목), usage.iterations 에 요청별 토큰이 있다
+cat <<'JSON'
+{"type": "system", "subtype": "init", "session_id": "sess-thinking", "model": "claude-opus-5[1m]"}
+{"type": "assistant", "message": {"content": [{"type": "text", "text": "hi"}]}}
+{"type": "result", "subtype": "success", "is_error": false, "usage": {"input_tokens": 2, "cache_creation_input_tokens": 4853, "cache_read_input_tokens": 10351, "output_tokens": 16, "output_tokens_details": {"thinking_tokens": 13}, "server_tool_use": {"web_search_requests": 0, "web_fetch_requests": 0}, "service_tier": "standard", "cache_creation": {"ephemeral_1h_input_tokens": 4853, "ephemeral_5m_input_tokens": 0}, "inference_geo": "not_available", "iterations": [{"input_tokens": 2, "output_tokens": 16, "cache_read_input_tokens": 10351, "cache_creation_input_tokens": 4853, "cache_creation": {"ephemeral_5m_input_tokens": 0, "ephemeral_1h_input_tokens": 4853}, "type": "message"}], "speed": "standard"}, "modelUsage": {"claude-haiku-4-5-20251001": {"inputTokens": 915, "outputTokens": 11, "cacheReadInputTokens": 0, "cacheCreationInputTokens": 0, "webSearchRequests": 0, "costUSD": 0.00097, "contextWindow": 200000, "maxOutputTokens": 32000, "thinkingTokens": 0, "canonicalModel": "claude-haiku-4-5", "provider": "firstParty", "costBasis": "list"}, "claude-opus-5[1m]": {"inputTokens": 2, "outputTokens": 16, "cacheReadInputTokens": 10351, "cacheCreationInputTokens": 4853, "webSearchRequests": 0, "costUSD": 0.0541155, "contextWindow": 1000000, "maxOutputTokens": 64000, "thinkingTokens": 13, "canonicalModel": "claude-opus-5", "provider": "firstParty", "costBasis": "list"}}}
+JSON
+exit 0

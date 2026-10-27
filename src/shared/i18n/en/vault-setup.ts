@@ -1,0 +1,92 @@
+import type { vaultSetup as ko } from '../ko/vault-setup'
+
+export const vaultSetup: typeof ko = {
+  emptyName: 'Empty library',
+  emptyDescription: 'Start without a topic',
+  openFailed: "Couldn't open the library",
+  joinTeam: 'Join a team library',
+  openExisting: 'Open an existing library or Obsidian folder',
+  recreate: 'Create again',
+  createMine: 'Create my library',
+  elapsed: (time: string): string => ` · ${time} so far`,
+  moreWays: 'Join a team library · open an existing folder · create somewhere else',
+  createElsewhere: 'Create somewhere else',
+  startWith: 'What do you want to start with?',
+  startWithNote: "It's just a few starter files, and you can change or delete them later.",
+  shapeLabel: 'New library type',
+  create: 'Create library',
+  creating: 'Creating the library… making a 2nd-brain folder where you picked in the folder window',
+  importing: (time: string): string => `Choosing where to put it and downloading… · ${time} so far`,
+  byAddress: 'Not in the list? Get it by address',
+  addressIntro:
+    "Paste the address of your team's library repository. You choose where to keep it in the next window.",
+  addressLabel: 'Team library address',
+  addressPlaceholder: 'https://github.com/my-username/our-library',
+  signInAbove: 'Sign in to GitHub above first',
+  receive: 'Get',
+  signInToReceive: 'Sign in to GitHub above first. Get becomes available once you sign in.',
+  folderNote:
+    'Your library is the folder that holds your wiki and sources. A new 2nd-brain folder appears inside the place you pick in the folder window. If you made it in the wrong place, switch with Open another library under Library in Settings — the folder you made stays where it is.',
+  adoptFailed: "Couldn't use it as a library",
+  adoptTitle: 'Use this folder as a 2nd-brain library and leave it as it is',
+  adoptKeepNotes: (n: number): string =>
+    `Your ${n} existing ${n === 1 ? 'note is' : 'notes are'} not changed or moved in any way`,
+  adoptAdds:
+    "Adds library rule files and wiki, originals and waiting-to-wikify folders. If a file with the same name exists, it is left alone. Only additions are made and your files stay as they are, so if you don't like it, just delete what was added",
+  adoptCopies:
+    'Puts copies of your notes in waiting to wikify. Making a draft turns the copies into wiki pages',
+  adoptPreview: (add: number, notes: number): string =>
+    `${add} ${add === 1 ? 'file' : 'files'} added · copies of ${notes} ${notes === 1 ? 'note' : 'notes'} to the waiting folder`,
+  adoptPreviewKept: (n: number): string => ` · ${n} ${n === 1 ? 'file' : 'files'} left as is`,
+  more: (n: number): string => `and ${n} more`,
+  adopting: 'Preparing…',
+  adopt: 'Use this folder as my library',
+  adopted: (n: number): string =>
+    `Ready to use as your library. Copies of ${n} ${n === 1 ? 'note' : 'notes'} are waiting for a wiki draft. Your original notes are unchanged.`,
+  adoptedKept: (list: string): string => `Already there, left as is: ${list}`,
+  adoptedIngest: 'Make a wiki draft from the copies',
+  teamListFailed: "Couldn't read the libraries you can join",
+  teamListTitle: 'Team libraries you can join',
+  teamListBusy: 'Reading now. You can load again when it finishes',
+  reload: 'Load again',
+  teamListSignIn: 'Sign in to GitHub above and libraries you can join show up here',
+  githubChecking: 'Checking your GitHub sign-in…',
+  searching: 'Searching…',
+  teamListEmpty:
+    'There are no team libraries you can join. If you work with someone, ask them to invite your GitHub username, then load again. To start alone, create a new library with Create library and upload it later from the team repository.',
+  invitedBy: (inviter: string | null): string => `Invited${inviter ? ` · ${inviter}` : ''}`,
+  acceptLabel: (name: string): string => `Accept the invitation to ${name} and get it`,
+  accept: 'Accept and get',
+  receiveLabel: (name: string): string => `Get ${name}`,
+  copied: 'Copied',
+  copyCommand: 'Copy command',
+  copy: 'Copy',
+  copyFailed: "Couldn't copy. Select the command yourself and copy it",
+  sampleAdding: 'Adding the sample…',
+  sampleTry: 'Try with a sample',
+  sampleNote:
+    "One short sample text goes into your sources. It isn't in the wiki yet — you turn it into a draft in the next step.",
+  purposeSaveFailed: "Couldn't save your answer",
+  purposeSave: 'Save',
+  purposeLater: 'Write it later',
+  githubLoginFailed: "Couldn't finish signing in to GitHub",
+  githubLogoutFailed: "Couldn't sign out",
+  later: 'Do it later',
+  deviceSteps:
+    '1. Copy the code below, then 2. open the approval page, enter the code in the browser and approve. If no window opens, open the address below yourself.',
+  copyCode: 'Copy code',
+  openVerify: 'Open approval page',
+  cancel: 'Cancel',
+  waitingApproval: 'Waiting for approval…',
+  codeExpiry: 'The code expires after 15 minutes. If it expired, cancel and sign in again.',
+  recheck: 'Check again',
+  githubSignedIn: (account: string | null): string =>
+    `Signed in to GitHub${account ? ` (${account})` : ''}. You can upload and get team libraries and send your edits to the team`,
+  logout: 'Sign out',
+  githubNeeded:
+    'To upload and get team libraries, sign in to GitHub once. Your password never goes into the app.',
+  noAccount: "If you don't have an account,",
+  signUp: 'create one first',
+  signUpFree: "— it's free",
+  githubLogin: 'Sign in to GitHub'
+}

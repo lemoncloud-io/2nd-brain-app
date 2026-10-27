@@ -1,0 +1,7 @@
+#!/bin/sh
+# fake claude: 돈 모델 항목은 있는데 contextWindow 만 없다 — 비율을 꾸며내지 않는지 본다
+cat <<'JSON'
+{"type": "system", "subtype": "init", "session_id": "s-2", "model": "claude-opus-5[1m]", "cwd": "/vault"}
+{"type": "result", "subtype": "success", "is_error": false, "usage": {"input_tokens": 100, "output_tokens": 10}, "modelUsage": {"claude-haiku-4-5-20251001": {"contextWindow": 200000}, "claude-opus-5[1m]": {"inputTokens": 100}}}
+JSON
+exit 0

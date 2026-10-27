@@ -1,0 +1,227 @@
+#!/usr/bin/env node
+// fake claude (켜 둔 채팅 세션): Agent SDK 가 띄우는 stream-json 입력 모드를 흉내 낸다.
+// 첫 줄 initialize 에 명령 목록으로 답하고, 사용자 줄마다 턴 하나를 돈다. 프로세스는 stdin 이 닫힐 때까지 산다.
+// 질문 글로 동작을 고른다 — 기억해 <말>·무엇을 기억해·천천히·써 줘·죽어·조용히·/compact
+// FAKE_CLAUDE_SPAWN_LOG: 띄울 때마다 인자 한 줄 · FAKE_CLAUDE_CONTROL_LOG: 받은 제어 요청 한 줄씩
+// FAKE_CLAUDE_OLD: initialize 를 모르는 구버전처럼 곧바로 끝난다
+// --resume=gone: 없는 세션 — claude 2.1.309 실측(2026-10-23)처럼 initialize 전에 오류 result 를 내고 끝난다
+const { appendFileSync } = require('node:fs')
+const readline = require('node:readline')
+
+const args = process.argv.slice(2)
+if (args[0] === '--version') {
+  console.log('2.1.309 (Claude Code)')
+  process.exit(0)
+}
+if (args[0] === 'auth') {
+  console.log('{"loggedIn":true,"authMethod":"claude.ai","email":"fake@example.com"}')
+  process.exit(0)
+}
+const log = (file, line) => {
+  if (file) appendFileSync(file, line + '\n')
+}
+log(process.env.FAKE_CLAUDE_SPAWN_LOG, args.join(' '))
+// FAKE_CLAUDE_PID_LOG: 띄운 프로세스 번호 — 끈 뒤 남은 자식이 없는지 본다
+log(process.env.FAKE_CLAUDE_PID_LOG, String(process.pid))
+if (process.env.FAKE_CLAUDE_OLD) {
+  process.stderr.write("error: unknown option '--permission-prompt-tool=stdio'\n")
+  process.exit(1)
+}
+
+const out = (obj) => process.stdout.write(JSON.stringify(obj) + '\n')
+const resume = (args.find((a) => a.startsWith('--resume=')) ?? '').slice('--resume='.length)
+if (resume === 'gone') {
+  // 실제 사유처럼 uuid 를 싣는다 — 숫자 429 가 든 id 로 분류기를 같이 시험한다
+  const message = 'No conversation found with session ID: 5f1e2d3c-4290-4abc-8def-0123456789ab'
+  out({ type: 'result', subtype: 'error_during_execution', is_error: true, errors: [message], session_id: 'gone' })
+  process.stderr.write(message + '\n')
+  process.exit(1)
+}
+const modelArg = (args.find((a) => a.startsWith('--model=')) ?? '').slice('--model='.length)
+const session = resume || 'sess-fake'
+let model = modelArg || 'claude-fake'
+let remembered = null
+let turn = null
+let asks = 0
+const waiting = new Map()
+// SDK 가 initialize 에 실어 보낸 PreToolUse 훅 id — 실제 claude 처럼 허용 규칙보다 먼저 묻는다
+let preToolUse = []
+
+const result = (text, extra = {}) => {
+  out({ type: 'result', subtype: 'success', is_error: false, result: text, session_id: session, ...extra })
+  turn = null
+}
+const say = (text) => out({ type: 'assistant', message: { content: [{ type: 'text', text }] }, session_id: session })
+
+const textOf = (content) =>
+  typeof content === 'string'
+    ? content
+    : content.map((b) => (b.type === 'image' ? `[image ${b.source.media_type}]` : b.text)).join(' ')
+
+const startTurn = (prompt) => {
+  turn = { prompt }
+  out({ type: 'system', subtype: 'init', session_id: session, model })
+  if (prompt === '/compact') {
+    out({ type: 'system', subtype: 'compact_boundary', session_id: session })
+    return result('')
+  }
+  const remember = /^기억해 (.+)$/.exec(prompt)
+  if (remember) {
+    remembered = remember[1]
+    say('OK')
+    return result('OK')
+  }
+  if (prompt.includes('무엇을 기억해')) {
+    say(remembered ?? '모름')
+    return result(remembered ?? '모름')
+  }
+  if (prompt.includes('천천히')) {
+    say('세는 중')
+    turn.timer = setTimeout(() => {
+      say('다 셌다')
+      result('다 셌다')
+    }, 5000)
+    return
+  }
+  if (prompt.includes('조용히')) return
+  if (prompt.includes('죽어')) {
+    process.stderr.write('fake claude crashed\n')
+    process.exit(1)
+  }
+  // 보관함 허용 규칙에 걸린 도구 — canUseTool 은 묻지 않고, 훅만 거쳐 곧바로 쓴다
+  if (prompt.includes('허용 규칙으로 써')) {
+    const file = `${process.cwd()}/notes/allowed.md`
+    const write = () => {
+      require('node:fs').mkdirSync(`${process.cwd()}/notes`, { recursive: true })
+      require('node:fs').writeFileSync(file, 'written\n')
+      say('써짐')
+      result('써짐')
+    }
+    const hook = preToolUse[0]
+    if (hook === undefined) return write()
+    const id = `hook-req-${++asks}`
+    waiting.set(id, (response) => {
+      if (response?.hookSpecificOutput?.permissionDecision === 'deny') {
+        say('막힘')
+        return result('막힘')
+      }
+      write()
+    })
+    out({
+      type: 'control_request',
+      request_id: id,
+      request: {
+        subtype: 'hook_callback',
+        callback_id: hook,
+        input: { hook_event_name: 'PreToolUse', tool_name: 'Write', tool_input: { file_path: file } },
+        tool_use_id: `tool-${asks}`
+      }
+    })
+    return
+  }
+  // 웹 조회·`도구 <이름>` — 읽기 전용 턴에서도 훅을 거친다
+  if (prompt.includes('웹 찾아') || prompt.startsWith('도구 ')) {
+    const web = prompt.includes('웹 찾아')
+    const tool = web ? 'WebFetch' : prompt.split(' ')[1]
+    const hook = preToolUse[0]
+    const id = `hook-req-${++asks}`
+    waiting.set(id, (response) => {
+      const denied = response?.hookSpecificOutput?.permissionDecision === 'deny'
+      const text = `${web ? '웹 ' : ''}${denied ? '막힘' : '씀'}`
+      say(text)
+      result(text)
+    })
+    out({
+      type: 'control_request',
+      request_id: id,
+      request: {
+        subtype: 'hook_callback',
+        callback_id: hook,
+        input: { hook_event_name: 'PreToolUse', tool_name: tool, tool_input: { url: 'https://example.com' } },
+        tool_use_id: `tool-${asks}`
+      }
+    })
+    return
+  }
+  if (prompt.includes('써 줘')) {
+    const id = `perm-${++asks}`
+    const input = { file_path: `${process.cwd()}/notes/a.md` }
+    out({ type: 'assistant', message: { content: [{ type: 'tool_use', name: 'Write', input }] }, session_id: session })
+    waiting.set(id, (behavior) => {
+      say(behavior === 'allow' ? '허용됨' : '거절됨')
+      result(behavior)
+    })
+    out({
+      type: 'control_request',
+      request_id: id,
+      request: { subtype: 'can_use_tool', tool_name: 'Write', input, tool_use_id: `tool-${asks}` }
+    })
+    return
+  }
+  if (prompt.includes('명령 실행')) {
+    const id = `perm-${++asks}`
+    const input = { command: 'touch notes/b.md' }
+    waiting.set(id, (behavior) => {
+      say(behavior === 'allow' ? '실행함' : '실행 못 함')
+      result(behavior)
+    })
+    out({
+      type: 'control_request',
+      request_id: id,
+      request: { subtype: 'can_use_tool', tool_name: 'Bash', input, tool_use_id: `tool-${asks}` }
+    })
+    return
+  }
+  const answer = `답: ${prompt}${resume ? ' (이어짐)' : ''}`
+  say(answer)
+  result(answer, { usage: { input_tokens: 10, output_tokens: 5 }, modelUsage: { [model]: { contextWindow: 1000 } } })
+}
+
+const control = (request_id, response = {}) =>
+  out({ type: 'control_response', response: { subtype: 'success', request_id, response } })
+
+readline.createInterface({ input: process.stdin }).on('line', (line) => {
+  let msg
+  try {
+    msg = JSON.parse(line)
+  } catch {
+    return
+  }
+  if (msg.type === 'control_request') {
+    const { subtype } = msg.request
+    log(process.env.FAKE_CLAUDE_CONTROL_LOG, [subtype, msg.request.mode ?? msg.request.model ?? ''].join(' ').trim())
+    if (subtype === 'initialize') {
+      preToolUse = (msg.request.hooks?.PreToolUse ?? []).flatMap((m) => m.hookCallbackIds ?? [])
+      return control(msg.request_id, {
+        commands: [
+          { name: 'compact', description: 'Free up context', argumentHint: '', builtin: true },
+          { name: 'vault-reach', description: '보관함에서 찾는다', argumentHint: '' },
+          { name: 'pdf2md-ingest', description: '', argumentHint: '' }
+        ],
+        agents: [],
+        output_style: 'default',
+        available_output_styles: [],
+        models: [],
+        account: {}
+      })
+    }
+    if (subtype === 'set_model') model = msg.request.model ?? model
+    if (subtype === 'interrupt' && process.env.FAKE_CLAUDE_IGNORE_INTERRUPT) return control(msg.request_id)
+    if (subtype === 'interrupt' && turn !== null) {
+      if (turn.timer) clearTimeout(turn.timer)
+      out({ type: 'result', subtype: 'error_during_execution', is_error: true, errors: [], session_id: session })
+      turn = null
+    }
+    return control(msg.request_id)
+  }
+  if (msg.type === 'control_response') {
+    const id = msg.response?.request_id
+    const done = waiting.get(id)
+    if (done) {
+      waiting.delete(id)
+      done(id.startsWith('hook-req-') ? msg.response?.response : msg.response?.response?.behavior)
+    }
+    return
+  }
+  if (msg.type === 'user') startTurn(textOf(msg.message.content))
+})
