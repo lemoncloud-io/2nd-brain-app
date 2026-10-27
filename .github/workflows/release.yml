@@ -94,7 +94,8 @@ jobs:
             security list-keychains -d user -s "$keychain" $(security list-keychains -d user | tr -d '"')
             rm -f "$p12"
             export CSC_KEYCHAIN="$keychain"
-            args+=("-c.mac.identity=$MAC_CSC_NAME")
+            # electron-builder 는 "Developer ID Application:" 접두어가 붙은 이름을 거절한다 — 비밀값은 키체인에 보이는 전체 이름이어도 된다
+            args+=("-c.mac.identity=${MAC_CSC_NAME#Developer ID Application: }")
             # @electron/notarize 의 APPLE_API_KEY 는 .p8 파일 경로다 — 비밀값 내용을 나만 읽는 임시 파일로 쓴다
             if [ -n "$APPLE_API_KEY_P8" ] && [ -n "$APPLE_API_KEY_ID" ] && [ -n "$APPLE_API_ISSUER" ]; then
               key="$RUNNER_TEMP/AuthKey_$APPLE_API_KEY_ID.p8"
