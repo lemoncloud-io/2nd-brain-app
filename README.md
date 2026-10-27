@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/media/banner.svg" alt="2nd-brain" width="560">
+  <img src="docs/media/banner.svg" alt="2nd-brain" width="420">
 </p>
 
 <h3 align="center">AI가 쓰고, 사람이 승인하는 개인 위키</h3>
@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/media/graph-growth.gif" alt="위키가 링크를 따라 한 점에서 2,359쪽으로 자라는 3D 그래프" width="860">
+  <img src="docs/media/graph-growth.gif" alt="위키가 링크를 따라 한 점에서 2,359쪽으로 자라는 3D 그래프" width="720">
   <br>
   <sub>그래프의 <b>성장 재생</b> — 위키가 실제 링크를 따라 한 점에서 전체로 자랍니다.</sub>
 </p>

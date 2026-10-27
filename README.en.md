@@ -1,5 +1,5 @@
 <p align="center">
-  <img src="docs/media/banner.svg" alt="2nd-brain" width="560">
+  <img src="docs/media/banner.svg" alt="2nd-brain" width="420">
 </p>
 
 <h3 align="center">A personal wiki the AI writes and you approve</h3>
@@ -17,7 +17,7 @@
 </p>
 
 <p align="center">
-  <img src="docs/media/graph-growth.gif" alt="A 3D graph of a wiki growing from a single point to 2,359 pages along its links" width="860">
+  <img src="docs/media/graph-growth.gif" alt="A 3D graph of a wiki growing from a single point to 2,359 pages along its links" width="720">
   <br>
   <sub>The graph's <b>growth replay</b>: the wiki grows from one point to the whole, following its real links. (Captions in the clip are Korean.)</sub>
 </p>
