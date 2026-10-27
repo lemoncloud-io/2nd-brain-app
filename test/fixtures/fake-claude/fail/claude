@@ -1,0 +1,4 @@
+#!/bin/sh
+# fake claude: result 없이 비정상 종료
+echo 'boom' >&2
+exit 3

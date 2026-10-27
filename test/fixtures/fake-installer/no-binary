@@ -1,0 +1,3 @@
+#!/bin/sh
+# 성공했다고 말하지만 앱이 찾는 자리에 아무것도 놓지 않는다
+echo "Installation complete"

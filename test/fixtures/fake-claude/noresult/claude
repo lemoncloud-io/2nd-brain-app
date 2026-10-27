@@ -1,0 +1,4 @@
+#!/bin/sh
+# fake claude: exit 0 이지만 result 줄이 없다
+echo '{"type":"assistant","message":{"content":[{"type":"text","text":"partial"}]}}'
+exit 0

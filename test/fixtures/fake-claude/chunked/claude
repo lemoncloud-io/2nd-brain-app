@@ -1,0 +1,5 @@
+#!/bin/sh
+# fake claude: stream-json 한 줄을 두 번에 나눠 쓴다 — 청크 경계 버퍼링 확인
+printf '{"type":"assistant","message":{"content":[{"type":"text","te'
+sleep 0.2
+printf 'xt":"hello"}]}}\n{"type":"result","subtype":"success","is_error":false}\n'

@@ -1,0 +1,6 @@
+#!/bin/sh
+# fake claude (query 프로필): stdin 프롬프트를 받아 init·text·Read tool·result 를 낸다.
+cat > /dev/null
+echo '{"type":"system","subtype":"init","session_id":"sess-query-1"}'
+echo '{"type":"assistant","message":{"content":[{"type":"text","text":"첫 답"},{"type":"tool_use","name":"Read","input":{"file_path":"/vault/wiki/apple.md"}}]}}'
+echo '{"type":"result","subtype":"success","is_error":false}'

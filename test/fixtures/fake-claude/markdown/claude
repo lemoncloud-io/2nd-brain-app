@@ -1,0 +1,20 @@
+#!/bin/sh
+# fake claude (e2e 채팅 렌더): 로그인 상태로 답하고, 채팅 질문에는 thinking 블록 + 표·수식·mermaid(정상·잘못된 것) 답을 낸다.
+# thinking 항목 모양은 녹화본(test/fixtures/claude-ndjson/thinking.ndjson) — 실제 CLI 는 thinking 문구를 비워 보내므로 여기서만 채운다
+set -e
+case "$1" in
+  --version) echo "2.1.270 (Claude Code)"; exit 0 ;;
+  auth) echo '{"loggedIn":true,"authMethod":"claude.ai","email":"e2e@example.com"}'; exit 0 ;;
+esac
+# 앱은 stream-json 으로 질문 한 줄을 쓰고 stdin 을 열어 둔다 — cat 으로 EOF 를 기다리면 답을 못 낸다
+IFS= read -r _ || true
+echo '{"type":"system","subtype":"init","session_id":"sess-e2e-markdown"}'
+echo '{"type":"assistant","message":{"content":[{"type":"thinking","thinking":"먼저 페이지를 떠올린다","signature":"<signature>"}]}}'
+# sh echo 가 \n 을 개행으로 풀어 JSON 이 깨진다 — 줄마다 text 이벤트로 나눠 낸다
+for line in \
+  '## 요약' '' '| 항목 | 값 |' '|---|---|' '| 넓이 | $\\pi r^2$ |' '' \
+  '```mermaid' 'graph TD; A-->B' '```' '' \
+  '```mermaid' 'this is not a diagram ((' '```'; do
+  printf '{"type":"assistant","message":{"content":[{"type":"text","text":"%s\\n"}]}}\n' "$line"
+done
+echo '{"type":"result","subtype":"success","is_error":false}'

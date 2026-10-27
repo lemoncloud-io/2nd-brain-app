@@ -1,0 +1,60 @@
+import type { files as ko } from '../ko/files'
+
+export const files: typeof ko = {
+  panes: { files: 'Files', tags: 'Tags', bookmarks: 'Bookmarks' },
+  sort: {
+    name: {
+      short: 'A–Z',
+      action: 'Sort by recently edited',
+      title: 'Sorted by name · click for recently edited'
+    },
+    recent: {
+      short: 'Recent',
+      action: 'Sort by name',
+      title: 'Sorted by recently edited · click for name'
+    }
+  },
+  createFolderFailed: "Couldn't create the folder",
+  createNoteFailed: "Couldn't create the note",
+  saveFirst: 'Save or close what you are writing first',
+  newFolderName: 'New folder',
+  untitled: 'Untitled',
+  renameFailed: "Couldn't rename",
+  moveFailed: "Couldn't move",
+  trashFailed: "Couldn't move to the trash",
+  newFolderLabel: 'New folder name',
+  newNoteLabel: 'New note name',
+  newNameLabel: 'New name',
+  tools: 'File tools',
+  newNote: 'New note',
+  newNoteHint: 'New note — add a format such as .html to the name to create that format',
+  newFolder: 'New folder',
+  collapseAll: 'Collapse all',
+  empty: 'Your library is empty. Start with a new note',
+  treeLabel: 'Library files',
+  rename: 'Rename',
+  openRight: 'Open on the right',
+  newNoteHere: 'New note in this folder',
+  trash: 'Move to trash',
+  trashTitle: (title: string): string => `Move "${title}" to the trash?`,
+  trashFolder: 'Pages inside the folder move too. ',
+  trashDetail: 'You can restore it from the trash. Links that pointed here will lead nowhere.',
+  keep: 'Keep',
+  trashConfirm: 'Move to trash',
+  tasks: (done: number, total: number): string => `Tasks ${done}/${total}`,
+  tagsFailed: "Couldn't read tags",
+  tagFilter: 'Filter tags',
+  tagsEmpty: 'No tags yet. Write #tag in a page or add it to the tags property',
+  tagsNoMatch: 'No matching tags',
+  tagFind: (tag: string): string => `Find #${tag}`,
+  bookmarksEmpty: 'No bookmarked pages. Click ☆ above a page to collect it here',
+  unbookmark: (label: string): string => `Remove bookmark ${label}`,
+  bookmarkFailed: "Couldn't change the bookmark",
+  treeFailed: "Couldn't read the library files",
+  docsFailed: "Couldn't read the library pages",
+  pagesFailed: "Couldn't read the wiki pages",
+  waitingLabel: 'Sources waiting for a wiki draft',
+  waitingOpen: (rel: string): string => `${rel} — click to read it`,
+  waitingRemove: (name: string): string => `Remove ${name}`,
+  waitingRemoveHint: "Moves sources you won't draft to the trash"
+}

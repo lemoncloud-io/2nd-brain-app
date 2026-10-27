@@ -1,0 +1,11 @@
+{
+  "files": {
+    "src/shared/josa.ts": "한국어 조사 규칙 — 화면 문구가 아니라 조사 쌍 데이터",
+    "src/shared/wiki/search.ts": "검색 불용어 — 볼트 본문(한국어)을 토큰으로 나누는 규칙",
+    "src/shared/vault-templates.ts": "토픽 설명은 새 보관함에 쓰는 본문(VAULT_RULES: 본문 한국어). 템플릿 이름·설명은 사전(vaultTemplates)에서 읽는다",
+    "src/main/chat/prompts.ts": "AI 에게 보내는 지시 본문 — 화면 문구가 아니다(범위 밖: AI 프롬프트 본문)",
+    "src/main/ingest/assemble.ts": "위키화 실행 기록(run-log)·커밋 요약 본문 — 볼트 데이터는 화면 언어와 따로 간다(D8)",
+    "src/main/ingest/draft-prompt.ts": "AI 초안 프롬프트와 그 출력 검사 — 검사 사유는 재시도 프롬프트로만 AI 에게 간다(범위 밖: AI 프롬프트)",
+    "src/main/clip/office-fixture.test-util.ts": "테스트 픽스처 문서 본문 — 앱이 쓰지 않는다"
+  }
+}

@@ -1,0 +1,47 @@
+{
+  "_note": "삭제 대상 경로 정본. 언인스톨러(build/uninstall-mac.command · build/installer.nsh)와 잔여물 검사가 이 목록을 따른다. mac 의 ~ 는 $HOME, win 의 %VAR% 는 환경변수. always = 조건 없이 삭제, 나머지 키 = userData/installed-cli/<키> 마커가 있을 때만. 한 키 안의 순서가 삭제 순서다.",
+  "_measured": "mac userData·Preferences 는 2026-09-21 패키징된 앱(arm64 dmg)을 실행해 실측 — Electron 은 productName 이 아니라 package.json name 을 쓴다. Caches·Saved Application State 두 경로는 appId 규칙에 따른 추정(이 머신에는 생기지 않았다) — 없으면 삭제가 no-op 이다. ~/Library/Logs 는 앱에 로거가 없어 넣지 않았다. win 의 always 세 경로는 2026-09-21 CI(windows-latest)에서 /S 설치 후 실측 — 앞의 둘은 nsis 템플릿이 지우고(설치 폴더, deleteAppDataOnUninstall), -updater 는 템플릿이 지우지 않아 build/installer.nsh 의 customUnInstall 이 맡는다(언인스톨러 슬라이스에서 채운다 — 지금은 빈 매크로). 시작 메뉴·바탕화면 바로가기는 템플릿이 만들고 지우며 이 목록과 잔여물 검사에 넣지 않았다.",
+  "_measured_cli": "2026-09-21 claude.ai/install.sh · chatgpt.com/codex/install.sh 를 받아 임시 HOME 에 TTY 없이 돌려 실측. Claude 는 ~/.local/bin/claude · ~/.local/share/claude(버전 실체) 외에 ~/.cache/claude · ~/.local/state/claude 도 만든다 → claude 키에 넣었다. Codex 는 ~/.local/bin/codex(심링크)·~/.local/bin/codex-code-mode-host 를 놓고 실체를 ~/.codex/packages/standalone 에 둔다 — 바이너리 마커만 있으면 그 셋만 지우고 ~/.codex 의 나머지(설정·대화 기록)는 남긴다. win 경로는 install.ps1 을 읽어 옮겼다(%LOCALAPPDATA%\\Programs\\OpenAI\\Codex\\bin 은 ~\\.codex\\packages\\standalone\\current\\bin 을 가리키는 정션. 목록에는 부모 OpenAI\\Codex 를 두고 standalone 을 먼저 놓았다 — 실체가 먼저 사라지면 정션은 끊어진 링크라 부모를 재귀 삭제해도 따라갈 곳이 없다. CI 실측은 Windows 언인스톨러 슬라이스). win 의 .cache·.local\\state 는 mac 실측에서 옮긴 것으로 미검증 — 없으면 no-op.",
+  "_known_residue": "두 설치기 모두 셸 프로필에 PATH 줄을 남긴다(Codex: ~/.zprofile 의 '# >>> Codex installer >>>' 블록, Claude: 안내만 출력. win 은 사용자 PATH 환경변수). 남의 파일이라 지우지 않는다 — docs/INSTALL-TEST.md 알려진 잔여물에 적는다. 바이너리 마커만 있을 때(설정 폴더가 원래 있던 사용자)는 ~/.codex/tmp 와 빈 ~/.codex/packages 가 남는다 — ~/.codex 는 그 사용자의 것이라 안 건드린다.",
+  "mac": {
+    "always": [
+      "/Applications/2nd-brain.app",
+      "~/Library/Application Support/2nd-brain-app",
+      "~/Library/Preferences/io.lemoncloud.2nd-brain-desktop.plist",
+      "~/Library/Caches/io.lemoncloud.2nd-brain-desktop",
+      "~/Library/Saved Application State/io.lemoncloud.2nd-brain-desktop.savedState"
+    ],
+    "claude": [
+      "~/.local/bin/claude",
+      "~/.local/share/claude",
+      "~/.local/state/claude",
+      "~/.cache/claude"
+    ],
+    "claude.config": ["~/.claude", "~/.claude.json"],
+    "codex": [
+      "~/.codex/packages/standalone",
+      "~/.local/bin/codex",
+      "~/.local/bin/codex-code-mode-host"
+    ],
+    "codex.config": ["~/.codex"]
+  },
+  "win": {
+    "always": [
+      "%LOCALAPPDATA%\\Programs\\2nd-brain-app",
+      "%APPDATA%\\2nd-brain-app",
+      "%LOCALAPPDATA%\\2nd-brain-app-updater"
+    ],
+    "claude": [
+      "%USERPROFILE%\\.local\\bin\\claude.exe",
+      "%USERPROFILE%\\.local\\share\\claude",
+      "%USERPROFILE%\\.local\\state\\claude",
+      "%USERPROFILE%\\.cache\\claude"
+    ],
+    "claude.config": ["%USERPROFILE%\\.claude", "%USERPROFILE%\\.claude.json"],
+    "codex": [
+      "%USERPROFILE%\\.codex\\packages\\standalone",
+      "%LOCALAPPDATA%\\Programs\\OpenAI\\Codex"
+    ],
+    "codex.config": ["%USERPROFILE%\\.codex"]
+  }
+}

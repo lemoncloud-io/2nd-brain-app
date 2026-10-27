@@ -1,0 +1,26 @@
+// 웹 탭 — 툴바·빈 자리·실패 문구(renderer lib/web-text.ts)
+export const web = {
+  address: '주소',
+  addressPlaceholder: '웹 페이지 주소',
+  empty: '주소를 넣고 Enter를 눌러 주세요',
+  toolbar: '웹 페이지',
+  newTab: '새 웹 페이지',
+  openBlank: '웹 페이지 열기',
+  back: '뒤로',
+  forward: '앞으로',
+  reload: '다시 불러오기',
+  stop: '그만 불러오기',
+  loading: '불러오는 중',
+  openOutside: '브라우저에서 열기',
+  retry: '다시 열기',
+  clip: '담기',
+  clipHint: '지금 보이는 페이지를 자료에 담아요 — 로그인해야 보이는 글도 담겨요',
+  clipping: '담는 중…',
+  clipped: '자료에 담았어요',
+  openClipped: '열기',
+  clipFailed: '이 페이지를 담지 못했어요',
+  badScheme: '앱 안에서 열 수 없는 주소예요',
+  badAddress: '주소를 확인해 주세요 — example.com 처럼 넣어 주세요',
+  crashed: '페이지가 멈췄어요 — 다시 열어 주세요',
+  loadFailed: '페이지를 열지 못했어요 — 주소와 인터넷 연결을 확인하고 다시 열어 주세요'
+}

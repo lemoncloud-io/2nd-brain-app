@@ -1,0 +1,9 @@
+#!/bin/sh
+# stderr 꼬리(4096자)보다 길게 쏟은 뒤 마지막 줄에 사유를 낸다
+i=0
+while [ $i -lt 200 ]; do
+  echo "warning $i: xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx" >&2
+  i=$((i+1))
+done
+echo "final reason" >&2
+exit 2

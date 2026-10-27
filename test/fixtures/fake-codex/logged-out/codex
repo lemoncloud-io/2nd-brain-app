@@ -1,0 +1,7 @@
+#!/bin/sh
+# fake codex: 미로그인 — login status 의 미로그인 문구·exit code 는 미검증(로그아웃 실측 안 함), exit≠0 으로 흉내 낸다
+case "$1" in
+  --version) echo "codex-cli 0.154.0"; exit 0 ;;
+  login) echo "Not logged in" >&2; exit 1 ;;
+esac
+exit 2

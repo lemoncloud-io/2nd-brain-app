@@ -1,0 +1,755 @@
+@import 'tailwindcss';
+@import 'tw-animate-css';
+/* Pretendard 는 번들한다 — index.html CSP 가 default-src 'self' 라 Google Fonts 는 막힌다. */
+@import 'pretendard/dist/web/variable/pretendardvariable-dynamic-subset.css';
+
+@custom-variant dark (&:where(.dark, .dark *));
+
+/*
+ * 구조(토큰 이름·타입·그림자)는 dou-app apps/desktop-web/src/styles.css 에서 옮겼고, 색은 2nd-brain 로고
+ * 팔레트 — Ink #20242C · Paper #F6EFE2 · Spark #FF8A3D — 로 바꿨다. 규칙·대비 = DESIGN.md § 토큰.
+ * 변수는 HSL 성분만 담고, @theme inline 이 hsl() 로 감싸 Tailwind 색으로 노출한다.
+ */
+:root {
+  --background: 0 0% 100%; /* #FFFFFF — 읽는 면은 흰 종이 그대로 */
+  --foreground: 220 16% 15%; /* #20242C Ink */
+
+  --primary: 24 100% 62%; /* #FF8B3D Spark — 시스템의 유일한 색상 */
+  --primary-foreground: 220 16% 15%; /* Spark 위 Ink 6.65:1 — 흰 글자는 2.3:1 */
+  --primary-ink: 22 85% 38%; /* #B34B0F 밝은 면 위 Spark 글자 — 흰 바탕 5.3:1 */
+  --highlight-alpha: 0.35; /* 형광펜 — 활성 메뉴·검색 일치. 흰 바탕 위 #FFD6BB, Ink 글자 11.5:1 */
+
+  --secondary: 180 5% 96%; /* #F4F5F5 BK_50 */
+  --secondary-foreground: 0 0% 10%;
+  --muted: 180 5% 96%;
+  --muted-foreground: 220 6% 42%; /* 흰 바탕 5.3:1 */
+  --accent: 180 5% 94%; /* hover·선택 행 */
+  --accent-foreground: 0 0% 10%;
+
+  --destructive: 3 80% 45%; /* #CF2017 — 흰 글자·흰 바탕 위 글자 둘 다 5.4:1 */
+  --destructive-foreground: 0 0% 100%;
+  --warning: 45 95% 46%; /* Spark 와 갈리게 노랑 쪽으로 */
+  --warning-foreground: 35 85% 28%;
+
+  /* 트리 배지 — 바뀐 파일·새 파일. Spark 는 주 동작의 색이라 여기 쓰지 않는다(§ 주 색을 쓰는 곳) */
+  --changed: 174 70% 32%; /* 청록 — 주황 Spark·노랑 경고와 갈린다 */
+  --added: 211 90% 48%;
+
+  --sidebar: 0 0% 100%; /* 흰색 — 본문과는 hairline 테두리로 갈린다 */
+  --label: 220 10% 26%;
+
+  --border: 240 5% 92%; /* #EAEAEC BK_100 */
+  --input-border: 240 5% 90%;
+  --focus-border: 22 90% 46%; /* #DF590C 흰 바탕 3.8:1 (비텍스트 3:1) */
+
+  --elevated: 0 0% 100%;
+  --hairline: 240 5% 92%; /* #EAEAEC */
+  --well: 0 0% 96%; /* #F5F5F5 */
+  --shadow-color: 0 0% 0%;
+
+  --radius: 0.5rem;
+}
+
+.dark {
+  --background: 220 16% 15%; /* #20242C Ink */
+  --foreground: 39 30% 92%; /* #F1ECE4 Paper 를 눌러 — 바탕 13.2:1 */
+
+  --primary: 24 100% 62%;
+  --primary-foreground: 220 16% 15%;
+  --primary-ink: 24 100% 62%; /* 어두운 면에서는 채움 Spark 가 곧 글자색 — 바탕 6.65:1 */
+  --highlight-alpha: 0.3; /* Ink 위 #634331, 글자 7.5:1 */
+
+  --secondary: 220 16% 11%;
+  --secondary-foreground: 39 30% 92%;
+  --muted: 220 16% 11%;
+  --muted-foreground: 220 8% 66%; /* #A1A6AF 바탕 6.35:1 · 떠 있는 면 5.6:1 */
+  --accent: 220 12% 22%; /* hover */
+  --accent-foreground: 39 30% 92%;
+
+  --destructive: 3 100% 68%; /* #FF645C — 바탕 5.3:1 · 떠 있는 면 4.7:1 */
+  --destructive-foreground: 220 16% 15%; /* 밝은 빨강 위에는 Ink 글자 — 5.3:1 */
+  --warning: 48 92% 58%;
+  --warning-foreground: 48 92% 62%;
+
+  --changed: 174 60% 52%;
+  --added: 211 85% 64%;
+
+  --sidebar: 220 16% 11%; /* #181B21 */
+  --label: 39 10% 78%;
+
+  --border: 220 12% 26%;
+  --input-border: 220 12% 28%;
+  --focus-border: 24 100% 62%; /* 어두운 면 포커스 = Spark */
+
+  --elevated: 220 14% 19%; /* #2A2E37 */
+  --hairline: 220 12% 23%;
+  --well: 220 18% 8%;
+  --shadow-color: 0 0% 0%;
+}
+
+@theme inline {
+  --color-background: hsl(var(--background));
+  --color-foreground: hsl(var(--foreground));
+  --color-primary: hsl(var(--primary));
+  --color-primary-foreground: hsl(var(--primary-foreground));
+  --color-primary-ink: hsl(var(--primary-ink));
+  --color-secondary: hsl(var(--secondary));
+  --color-secondary-foreground: hsl(var(--secondary-foreground));
+  --color-muted: hsl(var(--muted));
+  --color-muted-foreground: hsl(var(--muted-foreground));
+  --color-accent: hsl(var(--accent));
+  --color-accent-foreground: hsl(var(--accent-foreground));
+  --color-destructive: hsl(var(--destructive));
+  --color-destructive-foreground: hsl(var(--destructive-foreground));
+  --color-warning: hsl(var(--warning));
+  --color-warning-foreground: hsl(var(--warning-foreground));
+  --color-changed: hsl(var(--changed));
+  --color-added: hsl(var(--added));
+  --color-sidebar: hsl(var(--sidebar));
+  --color-label: hsl(var(--label));
+  --color-border: hsl(var(--border));
+  --color-input-border: hsl(var(--input-border));
+  --color-focus-border: hsl(var(--focus-border));
+  --color-elevated: hsl(var(--elevated));
+  --color-hairline: hsl(var(--hairline));
+  --color-well: hsl(var(--well));
+
+  --radius-sm: calc(var(--radius) - 4px);
+  --radius-md: calc(var(--radius) - 2px);
+  --radius-lg: var(--radius);
+
+  --font-sans: 'Pretendard Variable', -apple-system, BlinkMacSystemFont, system-ui, sans-serif;
+  --font-mono: ui-monospace, 'SF Mono', Menlo, monospace;
+
+  /* 위계는 크기만이 아니라 굵기·자간으로 — dou-app desktop 스케일 */
+  --text-display: 1.875rem;
+  --text-display--line-height: 2.375rem;
+  --text-display--letter-spacing: -0.024em;
+  --text-display--font-weight: 700;
+  --text-title: 1.125rem;
+  --text-title--line-height: 1.625rem;
+  --text-title--letter-spacing: -0.017em;
+  --text-title--font-weight: 700;
+  --text-heading: 0.9375rem;
+  --text-heading--line-height: 1.375rem;
+  --text-heading--letter-spacing: -0.009em;
+  --text-heading--font-weight: 600;
+  --text-body: 0.9375rem;
+  --text-body--line-height: 1.6rem;
+  --text-body--letter-spacing: -0.003em;
+  --text-callout: 0.875rem;
+  --text-callout--line-height: 1.3rem;
+  --text-callout--letter-spacing: -0.002em;
+  --text-caption: 0.8125rem;
+  --text-caption--line-height: 1.15rem;
+  --text-micro: 0.72rem;
+  --text-micro--line-height: 0.95rem;
+
+  /* 그림자는 셋뿐, 낮은 불투명도 + --shadow-color 틴트 */
+  --shadow-raised:
+    0 1px 2px 0 hsl(var(--shadow-color) / 0.04), 0 1px 3px -1px hsl(var(--shadow-color) / 0.07);
+  --shadow-overlay:
+    0 2px 6px -2px hsl(var(--shadow-color) / 0.1), 0 10px 28px -10px hsl(var(--shadow-color) / 0.2);
+  --shadow-well: inset 0 1px 2px 0 hsl(var(--shadow-color) / 0.05);
+
+  --ease-tactile: cubic-bezier(0.16, 1, 0.3, 1);
+}
+
+@layer base {
+  *,
+  ::before,
+  ::after {
+    border-color: var(--color-border);
+  }
+
+  html,
+  body,
+  #root {
+    height: 100%;
+  }
+
+  html {
+    font-family: var(--font-sans);
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    background-color: var(--color-background);
+    color: var(--color-foreground);
+    user-select: none;
+  }
+
+  /* 브라우저 기본 지우기(×)는 시스템 파랑이라 토큰과 어긋난다 — SearchClearButton 이 대신한다 */
+  input[type='search']::-webkit-search-cancel-button {
+    appearance: none;
+  }
+}
+
+/*
+ * 읽기 본문 — 위키 리더·자료 미리보기·채팅 답. 한글은 어절 단위로 줄을 바꾸고(keep-all) 줄 간격을 넉넉히.
+ * 유틸리티 층보다 낮은 components 층이라 요소에 붙은 클래스가 이긴다.
+ */
+@layer components {
+  .prose-wiki {
+    font-size: 1rem;
+    line-height: 1.8;
+    color: var(--color-foreground);
+    word-break: keep-all;
+    overflow-wrap: anywhere;
+    user-select: text;
+  }
+  .prose-wiki > * + * {
+    margin-top: 0.9em;
+  }
+  .prose-wiki :is(h1, h2, h3, h4) {
+    font-weight: 700;
+    line-height: 1.4;
+    letter-spacing: -0.018em;
+  }
+  .prose-wiki h1 {
+    font-size: 1.5em;
+    margin-top: 2em;
+  }
+  .prose-wiki h2 {
+    /* 18px — text-title 과 같은 크기(DESIGN.md § 토큰, 타입 스케일 7단계) */
+    font-size: 1.125em;
+    margin-top: 1.9em;
+  }
+  .prose-wiki h3 {
+    font-size: 1.0625em;
+    font-weight: 600;
+    margin-top: 1.6em;
+  }
+  .prose-wiki h4 {
+    font-size: 1em;
+    font-weight: 600;
+    margin-top: 1.4em;
+  }
+  .prose-wiki > :is(h1, h2, h3, h4):first-child {
+    margin-top: 0;
+  }
+  .prose-wiki :is(ul, ol) {
+    padding-left: 1.4em;
+  }
+  .prose-wiki ul {
+    list-style: disc;
+  }
+  .prose-wiki ol {
+    list-style: decimal;
+  }
+  .prose-wiki li + li {
+    margin-top: 0.3em;
+  }
+  .prose-wiki li::marker {
+    color: var(--color-muted-foreground);
+  }
+  /* 체크박스 항목 — 목록 표식 자리에 상자가 들어간다(표식과 상자가 둘 다 보이면 마커가 두 겹이다) */
+  .prose-wiki li.task-item {
+    list-style: none;
+    margin-left: -1.4em;
+    padding-left: 1.4em;
+    text-indent: -1.4em;
+  }
+  .prose-wiki li.task-item > ul,
+  .prose-wiki li.task-item > ol {
+    text-indent: 0;
+  }
+  .prose-wiki .wiki-task-box {
+    width: 0.95em;
+    height: 0.95em;
+    margin: -5px calc(0.45em - 5px) -5px -5px;
+    padding: 5px;
+    vertical-align: -0.1em;
+    accent-color: var(--color-primary);
+    cursor: pointer;
+  }
+  /* 편집기(.cm-lp-task)와 같은 2px 링 — 리더만 브라우저 기본 1px이면 체계가 갈린다 */
+  .prose-wiki .wiki-task-box:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    border-radius: 2px;
+    box-shadow:
+      0 0 0 2px var(--color-background),
+      0 0 0 4px hsl(var(--primary-ink));
+  }
+  .prose-wiki .wiki-task-box:disabled {
+    cursor: default;
+  }
+  .prose-wiki a {
+    color: inherit;
+    text-decoration-line: underline;
+    text-decoration-color: var(--color-primary);
+    text-decoration-thickness: 2px;
+    text-underline-offset: 3px;
+    cursor: pointer;
+  }
+  .prose-wiki a:hover {
+    background-color: hsl(var(--primary) / var(--highlight-alpha));
+  }
+  /* 위키 링크의 키보드 포커스 — 브라우저 기본 윤곽이 아니라 focus-ring 과 같은 2px 링 */
+  .prose-wiki a:focus-visible {
+    outline: 2px solid transparent;
+    outline-offset: 2px;
+    border-radius: 2px;
+    box-shadow:
+      0 0 0 2px var(--color-background),
+      0 0 0 4px hsl(var(--primary-ink));
+  }
+  /* 찾기 일치 — 형광펜, 지금 자리는 진하게(두 테마 모두 토큰으로) */
+  .prose-wiki mark[data-hit] {
+    background-color: hsl(var(--primary) / calc(var(--highlight-alpha) * 0.6));
+    color: inherit;
+    border-radius: 2px;
+  }
+  .prose-wiki mark[data-current] {
+    background-color: hsl(var(--primary) / var(--highlight-alpha));
+    outline: 1px solid var(--color-primary);
+  }
+  /* 바뀐 곳 — 글은 제자리에 두고 왼쪽 여백에만 막대를 긋는다 */
+  .prose-wiki .changed-block {
+    position: relative;
+  }
+  .prose-wiki .changed-block::before {
+    content: '';
+    position: absolute;
+    left: -0.85rem;
+    top: 0.15em;
+    bottom: 0.15em;
+    width: 3px;
+    border-radius: 2px;
+    background-color: var(--color-primary);
+  }
+  .prose-wiki blockquote {
+    border-left: 3px solid var(--color-border);
+    padding-left: 1em;
+    color: var(--color-muted-foreground);
+  }
+  .prose-wiki code {
+    font-family: var(--font-mono);
+    font-size: 0.85em;
+    background-color: var(--color-secondary);
+    padding: 0.12em 0.35em;
+    border-radius: 4px;
+  }
+  .prose-wiki pre {
+    background-color: var(--color-secondary);
+    padding: 0.9em 1em;
+    border-radius: 8px;
+    overflow-x: auto;
+    font-size: 0.8125rem;
+    line-height: 1.6;
+  }
+  .prose-wiki pre code {
+    background: none;
+    padding: 0;
+    font-size: inherit;
+  }
+  .prose-wiki table {
+    width: 100%;
+    border-collapse: collapse;
+    font-size: 0.9375em;
+  }
+  .prose-wiki :is(th, td) {
+    border-bottom: 1px solid var(--color-hairline);
+    padding: 0.5em 0.75em;
+    text-align: left;
+  }
+  .prose-wiki th {
+    font-weight: 600;
+  }
+  .prose-wiki hr {
+    border: 0;
+    border-top: 1px solid var(--color-hairline);
+    margin: 2em 0;
+  }
+  .prose-wiki img {
+    border-radius: 8px;
+  }
+  .prose-wiki strong {
+    font-weight: 600;
+  }
+  /* 채팅 답 — 같은 규칙을 한 단계 작게 */
+  .prose-compact {
+    font-size: 0.9375rem;
+    line-height: 1.75;
+  }
+  /* 생각 블록 바로 뒤의 제목은 답의 첫 줄이다 — 절 사이 간격을 주면 생각과 답이 떨어져 보인다 */
+  .prose-compact > details + :is(h1, h2, h3, h4) {
+    margin-top: 0.5em;
+  }
+}
+
+@utility scrollbar-thin {
+  scrollbar-width: thin;
+  scrollbar-color: var(--color-border) transparent;
+}
+
+/* 탭 띠처럼 가로로만 흐르는 줄 — 막대가 보이면 36px 줄의 절반을 먹는다 */
+@utility scrollbar-none {
+  scrollbar-width: none;
+  &::-webkit-scrollbar {
+    display: none;
+  }
+}
+
+/* 형광펜 — 글자 아래 절반만 Spark 로 칠한다. 활성 메뉴와 검색 일치에만 쓴다 */
+@utility highlighter {
+  background-image: linear-gradient(
+    to bottom,
+    transparent 55%,
+    hsl(var(--primary) / var(--highlight-alpha)) 55%,
+    hsl(var(--primary) / var(--highlight-alpha)) 92%,
+    transparent 92%
+  );
+  background-repeat: no-repeat;
+  box-decoration-break: clone;
+}
+
+/* 일하는 중인 글자 — 흐린 글자 위로 밝은 띠가 지나간다. 채팅의 "생각하는 중" */
+@utility shimmer {
+  color: transparent;
+  background-image: linear-gradient(
+    90deg,
+    var(--color-muted-foreground) 0%,
+    var(--color-muted-foreground) 40%,
+    var(--color-foreground) 50%,
+    var(--color-muted-foreground) 60%,
+    var(--color-muted-foreground) 100%
+  );
+  background-size: 200% 100%;
+  background-clip: text;
+  animation: shimmer 2s linear infinite;
+}
+
+@keyframes shimmer {
+  from {
+    background-position: 100% 0;
+  }
+  to {
+    background-position: -100% 0;
+  }
+}
+
+/* 답의 첫 글자를 기다리는 점 셋 — 점마다 늦게 튄다 */
+@keyframes typing-dot {
+  0%,
+  60%,
+  100% {
+    opacity: 0.25;
+    transform: translateY(0);
+  }
+  30% {
+    opacity: 1;
+    transform: translateY(-2px);
+  }
+}
+
+/*
+ * 키보드 포커스 — 배경 2px 틈 + 4px 링, :focus-visible 에서만.
+ * 링 색은 primary 를 60% 로 흐린 것이 아니라 `--primary-ink` 다: 흰 바탕에서 primary/0.6 은
+ * 사실상 안 보였다(WCAG 2.2 비텍스트 대비 3:1). primary-ink 는 밝은 면에서 4.5:1 이상이고
+ * 어두운 면에서는 채움 Spark 그대로라, 한 토큰이 두 테마를 다 만족한다.
+ */
+@utility focus-ring {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+
+  &:focus-visible {
+    outline: none;
+    box-shadow:
+      0 0 0 2px var(--color-background),
+      0 0 0 4px hsl(var(--primary-ink));
+  }
+}
+
+/*
+ * 누름 0.97 — transform 만. dou-app 의 .tactile 은 transition 단축형이라 transition-colors 와
+ * 같이 쓰면 둘 중 하나가 덮인다 — 색 전이까지 여기서 맡는다.
+ */
+@utility tactile {
+  transition-property: color, background-color, border-color, box-shadow, opacity, transform;
+  transition-duration: 140ms;
+  transition-timing-function: var(--ease-tactile);
+
+  &:active {
+    transform: scale(0.97);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 0.01ms !important;
+    scroll-behavior: auto !important;
+  }
+
+  /*
+   * 진행 표시는 남긴다 — 멈춘 스피너는 "멈췄다"로 읽힌다. 도는 속도만 늦추고, 점 깜빡임(투명도)은
+   * 움직임이 아니라 그대로 둔다. 장식 모션(타자 점·눌림·이동)은 위 규칙이 끈다
+   */
+  .animate-spin {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
+  .animate-pulse {
+    animation-duration: 2s !important;
+    animation-iteration-count: infinite !important;
+  }
+}
+
+/*
+ * CodeMirror — basicSetup 은 밝은 면을 전제로 한 색을 들고 온다. 그대로 두면 `.dark` 안에서
+ * 원본 칸만 흰 판으로 남는다. JS 테마 확장 대신 CSS 로 덮는 이유: 테마가 바뀔 때 EditorView 를
+ * 다시 만들면 저장하지 않은 글이 사라진다. CM6 은 자기 스타일을 head 맨 앞에 넣으므로
+ * 같은 특이도면 이 규칙이 이긴다.
+ */
+.cm-editor {
+  background-color: var(--color-background);
+  color: var(--color-foreground);
+}
+
+.cm-editor .cm-content {
+  caret-color: var(--color-foreground);
+}
+
+.cm-editor .cm-gutters {
+  background-color: var(--color-well);
+  color: var(--color-muted-foreground);
+  border-right-color: var(--color-hairline);
+}
+
+.cm-editor .cm-activeLine,
+.cm-editor .cm-activeLineGutter {
+  background-color: var(--color-accent);
+}
+
+.cm-editor .cm-cursor,
+.cm-editor .cm-dropCursor {
+  border-left-color: var(--color-foreground);
+}
+
+.cm-editor .cm-selectionBackground,
+.cm-editor.cm-focused .cm-selectionBackground {
+  background-color: hsl(var(--primary) / 0.25);
+}
+
+.cm-editor .cm-tooltip,
+.cm-editor .cm-panels {
+  background-color: var(--color-elevated);
+  color: var(--color-foreground);
+  border-color: var(--color-border);
+}
+
+/* 찾기·바꾸기 패널(basicSetup) — 입력칸·버튼을 앱 토큰으로 */
+.cm-editor .cm-panel.cm-search {
+  padding: 6px 8px;
+  border-bottom: 1px solid var(--color-hairline);
+}
+.cm-editor .cm-panel.cm-search input,
+.cm-editor .cm-panel.cm-search button {
+  font: inherit;
+  color: var(--color-foreground);
+  background-color: var(--color-background);
+  border: 1px solid var(--color-border);
+  border-radius: 4px;
+  padding: 2px 6px;
+  margin-right: 4px;
+}
+.cm-editor .cm-panel.cm-search button:hover {
+  background-color: var(--color-accent);
+}
+.cm-editor .cm-panel.cm-search label {
+  color: var(--color-muted-foreground);
+}
+.cm-editor .cm-searchMatch {
+  background-color: hsl(var(--primary) / calc(var(--highlight-alpha) * 0.6));
+}
+.cm-editor .cm-searchMatch-selected {
+  background-color: hsl(var(--primary) / var(--highlight-alpha));
+}
+
+.cm-editor .cm-tooltip-autocomplete > ul > li[aria-selected] {
+  background-color: var(--color-accent);
+  color: var(--color-foreground);
+}
+
+/*
+ * 라이브 미리보기 편집기(`lib/live-preview.ts`) — 리더와 같은 글꼴·크기로 쓰고, 커서가 없는 줄은 기호를 숨긴다.
+ * "꾸밈 기호 보기" 를 켜면(`.live-preview-source`) 고정폭으로 기호를 다 보인다.
+ * CodeMirror 가 주입하는 스타일은 층 밖이라 이 블록도 층 밖에 둔다 — 층 안이면 늘 진다.
+ */
+.live-preview .cm-content {
+  max-width: 42rem;
+  margin: 0 auto;
+  padding: 3rem 2rem 6rem;
+  font-size: 1rem;
+  line-height: 1.8;
+  word-break: keep-all;
+}
+/* 라이브 모드는 읽는 모양이다 — 줄 번호·접기 칸과 기본 강조의 밑줄(제목·속성)을 뺀다 */
+.live-preview:not(.live-preview-source) .cm-gutters {
+  display: none;
+}
+.live-preview:not(.live-preview-source)
+  .cm-content
+  span:not(.cm-lp-link, .cm-lp-wikilink, .cm-lp-strike) {
+  text-decoration: none;
+}
+.live-preview-source .cm-content {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.875rem;
+}
+.live-preview .cm-lp-h {
+  font-weight: 700;
+  line-height: 1.4;
+  letter-spacing: -0.018em;
+}
+.live-preview .cm-lp-h1 {
+  font-size: 1.5em;
+}
+.live-preview .cm-lp-h2 {
+  font-size: 1.25em;
+}
+.live-preview .cm-lp-h3 {
+  font-size: 1.0625em;
+}
+.live-preview .cm-lp-strong {
+  font-weight: 700;
+}
+.live-preview .cm-lp-em {
+  font-style: italic;
+}
+.live-preview .cm-lp-strike {
+  text-decoration: line-through;
+}
+.live-preview .cm-lp-code,
+.live-preview .cm-lp-codeblock {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.875em;
+  background: var(--color-muted);
+}
+.live-preview .cm-lp-code {
+  border-radius: 3px;
+  padding: 0 0.2em;
+}
+.live-preview .cm-lp-quote {
+  border-left: 3px solid var(--color-hairline);
+  padding-left: 0.9em;
+  color: var(--color-muted-foreground);
+}
+.live-preview .cm-lp-fm {
+  font-family: var(--font-mono, ui-monospace, monospace);
+  font-size: 0.8125rem;
+  color: var(--color-muted-foreground);
+}
+/* 기본 구문 색(구분선 `---` 남색·제목 모양 키 밑줄)은 어두운 면에서 1.2~1.6:1 — 줄 색(4.5:1)을 그대로 쓴다 */
+.live-preview .cm-lp-fm span {
+  color: inherit;
+  font-weight: inherit;
+  text-decoration: none;
+}
+/* 접은 속성 블록 — 한 줄 칩. 누르면 원문이 펼쳐진다 */
+.live-preview .cm-lp-props {
+  display: inline-flex;
+  align-items: center;
+  min-height: 1.75rem;
+  padding: 0 0.6rem;
+  border: 1px solid var(--color-hairline);
+  border-radius: 6px;
+  background: var(--color-background);
+  color: var(--color-muted-foreground);
+  font: 500 var(--text-caption) / var(--text-caption--line-height) var(--font-sans);
+  cursor: pointer;
+}
+.live-preview .cm-lp-props:hover {
+  background: var(--color-accent);
+  color: var(--color-foreground);
+}
+/* Tab 으로도 닿는 칩이라 브라우저 기본 1px이 아니라 2px 링 */
+.live-preview .cm-lp-props:focus-visible {
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 4px hsl(var(--primary-ink));
+}
+.live-preview .cm-lp-link,
+.live-preview .cm-lp-wikilink {
+  color: var(--color-primary-ink);
+  text-decoration: underline;
+  text-underline-offset: 3px;
+  cursor: text;
+}
+.live-preview .cm-lp-missing {
+  color: var(--color-muted-foreground);
+  text-decoration-style: dashed;
+}
+.live-preview .cm-lp-bullet {
+  color: var(--color-muted-foreground);
+  padding-right: 0.15em;
+}
+/* 누를 자리 24px — 둘레 여백만큼 음수 여백으로 줄 높이·글 자리는 그대로 */
+.live-preview .cm-lp-task-hit {
+  display: inline-block;
+  padding: 5px;
+  margin: -5px calc(0.35em - 5px) -5px -5px;
+  line-height: 0;
+  vertical-align: -0.1em;
+  cursor: pointer;
+}
+/* 리더 상자(.wiki-task-box)와 같은 Spark 색, 포커스는 focus-ring 과 같은 2px 링 */
+.live-preview .cm-lp-task {
+  width: 0.95em;
+  height: 0.95em;
+  margin: 0;
+  accent-color: var(--color-primary);
+  cursor: pointer;
+  outline: 2px solid transparent;
+  outline-offset: 2px;
+  border-radius: 2px;
+}
+.live-preview .cm-lp-task:focus-visible {
+  box-shadow:
+    0 0 0 2px var(--color-background),
+    0 0 0 4px hsl(var(--primary-ink));
+}
+.live-preview .cm-lp-hr {
+  display: inline-block;
+  width: 100%;
+  border-top: 1px solid var(--color-hairline);
+  vertical-align: middle;
+}
+.live-preview .cm-lp-image {
+  display: block;
+  max-width: 100%;
+  border-radius: 6px;
+  margin: 0.4em 0;
+}
+.live-preview .cm-lp-embed {
+  border: 1px solid var(--color-hairline);
+  border-radius: 4px;
+  padding: 0 0.35em;
+  font-size: 0.875em;
+}
+
+/* 3D 그래프 라이브러리가 실행 중에 넣는 기본 툴팁·안내문(sans-serif 12px·검정 반투명, lavender 22px).
+   그 스타일은 레이어 밖이라 @layer 안 규칙으로는 못 이긴다 — 레이어 밖에서 선택자를 한 단계 좁혀 덮는다 */
+[data-testid='graph-canvas'] .float-tooltip-kap {
+  padding: 0.25rem 0.5rem;
+  border: 1px solid var(--color-hairline);
+  border-radius: var(--radius-md);
+  font: 500 var(--text-caption) / var(--text-caption--line-height) var(--font-sans);
+  color: var(--color-foreground);
+  background: var(--color-elevated);
+  box-shadow: var(--shadow-overlay);
+}
+[data-testid='graph-canvas'] .graph-info-msg {
+  font-family: var(--font-sans);
+  font-size: var(--text-callout);
+  color: var(--color-muted-foreground);
+  opacity: 1;
+}

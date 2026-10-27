@@ -1,0 +1,108 @@
+appId: io.lemoncloud.2nd-brain-desktop
+productName: 2nd-brain
+directories:
+  buildResources: build
+files:
+  - '!**/.vscode/*'
+  - '!src/*'
+  - '!e2e/*'
+  - '!test/*'
+  - '!electron.vite.config.{js,ts,mjs,cjs}'
+  - '!{.eslintcache,eslint.config.mjs,.prettierignore,.prettierrc.yaml,dev-app-update.yml,CHANGELOG.md,README.md}'
+  - '!{.env,.env.*,.npmrc,pnpm-lock.yaml}'
+  - '!{tsconfig.json,tsconfig.node.json,tsconfig.web.json,vitest.config.ts,playwright.config.ts}'
+  # 실행 중에 읽지 않는 것 — 소스맵·타입 선언·타입스크립트 빌드 캐시
+  - '!**/node_modules/**/*.map'
+  - '!**/node_modules/**/*.d.ts'
+  - '!*.tsbuildinfo'
+  # 작업 디렉토리·취득 산출물은 싣지 않는다 — vault-kit 은 extraResources 로 따로 싣고,
+  # models(임베딩 모델 취득물)는 기능 삭제(e8e2fd4) 후 잔재다. 디스크에 남아 있어도 타면 안 된다
+  - '!resources/models/**'
+  - '!.tak-loop/**'
+  # 로컬 도구 산출물 — 레포에는 있지만 앱과 무관하다
+  - '!{.codegraph,.impeccable,.claude}/**'
+  # renderer 전용(devDependencies)은 vite 가 out/renderer 로 묶는다 — node_modules 실물은 main 이 읽지 않는다
+  # (out/main/index.js 의 외부 require 에는 없음). asar 다이어트용 선별 제외
+  - '!**/node_modules/{mermaid,@mermaid-js,elkjs,dagre-d3-es,cytoscape,cytoscape-cose-bilkent,cytoscape-fcose}/**'
+  - '!**/node_modules/{three,react-force-graph-3d,3d-force-graph,three-render-objects,kapsule,polished}/**'
+  - '!**/node_modules/{katex,dayjs,es-toolkit,graphology,graphology-communities-louvain}/**'
+  # pdfjs-dist 의 선택적 네이티브 — 글자 추출만 쓰고 node canvas 렌더는 쓰지 않는다(src/main/clip/pdf-text.ts)
+  - '!**/node_modules/{@napi-rs,@img}/**'
+  # Agent SDK 가 함께 받는 플랫폼별 claude 실행 파일(mac arm64 약 260MB) — 채팅 세션은 사용자 PC 의 claude 를
+  # pathToClaudeCodeExecutable 로 띄우고(src/main/chat/session/claude-session.ts) 이것은 쓰지 않는다
+  - '!**/node_modules/@anthropic-ai/claude-agent-sdk-*/**'
+  # dugite(mac)가 함께 받는 Git Credential Manager(.NET, 약 110MB) — 앱은 GitHub 로그인 토큰을 env 로 넘기고
+  # credential.helper 를 비운다(src/main/git.ts), 쓰지 않는다. git 실행 파일은 시스템 라이브러리만 링크한다(otool -L).
+  # Windows dugite 는 git/mingw64 아래라 이 경로에 걸리지 않는다
+  - '!**/node_modules/dugite/git/libexec/git-core/git-credential-manager*'
+  - '!**/node_modules/dugite/git/libexec/git-core/*.{dll,dylib,json}'
+asarUnpack:
+  - resources/**
+  - '**/*.node'
+  # 번들 git(dugite) 실행 파일은 asar 안에서 실행되지 않는다 — src/main/git.ts
+  - '**/node_modules/dugite/git/**'
+extraResources:
+  - from: resources/vault-kit
+    to: vault-kit
+  # 언인스톨러를 앱 안에도 싣는다 — dmg 를 버린 뒤에도 Contents/Resources 에서 찾아 bash 로 돌릴 수 있다(자기 번들 경로를 스스로 안다)
+  - from: build/uninstall-mac.command
+    to: Uninstall 2nd-brain.command
+mac:
+  target:
+    - dmg
+    # 자동 업데이트(electron-updater MacUpdater)는 latest-mac.yml 의 zip 항목을 받는다 — dmg 는 처음 설치용이다
+    - zip
+    - dir
+  # 기본은 비서명 — 키체인에 인증서가 있어도 쓰지 않는다. ad-hoc 서명은 scripts/after-pack.mjs 가 한다.
+  # Developer ID 서명은 릴리스 CI 만 켠다: 비밀값이 있으면 `-c.mac.identity=<인증서 이름>` 으로 덮는다
+  # (.github/workflows/release.yml). 그때 hardenedRuntime(기본 켜짐)과 entitlements 가 읽힌다 — 앱 본체는
+  # build/entitlements.mac.plist 가 기본으로 잡히고(app-builder-lib mac/MacTargetHelper), 아래 entitlementsInherit 은 helper 들 몫이다
+  identity: null
+  # zip(업데이트용) 이름도 dmg 처럼 ${name}(package.json name) 으로 — 기본값은 productName 이라 표시 이름이 바뀌면 파일 이름도 따라 바뀐다.
+  # dmg 는 dmg.artifactName 이 따로 정한다
+  artifactName: ${name}-${version}-${arch}-mac.${ext}
+  entitlementsInherit: build/entitlements.mac.plist
+  # notarize 는 적지 않는다 — APPLE_API_KEY·APPLE_API_KEY_ID·APPLE_API_ISSUER 가 있을 때만 공증하고,
+  # 없으면 electron-builder 가 경고 뒤 건너뛴다(app-builder-lib mac/MacTargetHelper notarizeIfProvided)
+dmg:
+  artifactName: ${name}-${version}-${arch}.${ext}
+  # 기본 배치(앱 + Applications 링크)에 언인스톨러를 더한다 — contents 를 쓰면 기본 둘도 다시 적어야 한다
+  contents:
+    - x: 130
+      y: 220
+      type: file
+    - x: 410
+      y: 220
+      type: link
+      path: /Applications
+    - x: 270
+      y: 380
+      type: file
+      path: build/uninstall-mac.command
+      name: Uninstall 2nd-brain.command
+win:
+  target:
+    - nsis
+# Windows 설치본은 Windows 에서만 만든다(.github/workflows/installer.yml) — dugite 가 빌드 호스트의
+# process.platform 으로 git 바이너리를 받아서 mac 크로스 빌드는 mac 용 git 을 번들한다.
+nsis:
+  # per-user 원클릭 — 관리자 권한 없이 %LOCALAPPDATA%\Programs 에 깔리고 /S 무인 설치·삭제가 된다
+  oneClick: true
+  perMachine: false
+  # 언인스톨 시 %APPDATA% 의 앱 데이터까지 지운다(업데이트 때는 템플릿이 건너뛴다)
+  deleteAppDataOnUninstall: true
+  include: build/installer.nsh
+  # 기본값은 "이름 버전" 이다 — 프로그램 추가/제거에는 이름만 보인다
+  uninstallDisplayName: ${productName}
+  artifactName: ${name}-${version}-setup.${ext}
+npmRebuild: false
+# 릴리스는 .github/workflows/release.yml 만 올린다(`--publish always`, draft). 다른 빌드는 전부 `--publish never` 를 준다 —
+# CI 에서 --publish 를 빼면 electron-builder 가 태그 없이도 github 에 올리려 한다.
+# 이 설정은 설치본의 app-update.yml 에도 들어간다(레포 이름만, 토큰 없음). 레포가 private 인 동안 업데이터는 꺼져 있어
+# 읽히지 않는다(src/main/update/updater.ts AUTO_UPDATE) — 공개 전환 때 owner/repo 를 바꾼다(docs/RELEASE.md)
+publish:
+  provider: github
+  owner: lemoncloud-io
+  repo: 2nd-brain-app
+  releaseType: draft
+afterPack: scripts/after-pack.mjs

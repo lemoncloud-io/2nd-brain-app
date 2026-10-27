@@ -1,0 +1,8 @@
+#!/bin/sh
+# fake codex: --version·login status 를 로그인 상태로 답한다 (codex-cli 0.154.0 실측: login status 는 stdout 비움·stderr 에 문구·exit 0)
+case "$1" in
+  --version) echo "codex-cli 0.154.0"; exit 0 ;;
+  login) echo "Logged in using ChatGPT" >&2; exit 0 ;;
+  logout) echo "Removed stored credentials"; exit 0 ;;
+esac
+exit 2

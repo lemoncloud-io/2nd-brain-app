@@ -1,0 +1,4 @@
+#!/bin/sh
+echo "Downloading..."
+echo "curl: (6) Could not resolve host: claude.ai" >&2
+exit 6

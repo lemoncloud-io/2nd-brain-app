@@ -1,0 +1,42 @@
+name: ci
+
+# PR 과 main push 마다 검사·테스트. 일단 macOS 한 러너만 — Windows 는 설치본 스모크(installer.yml)가 본다.
+on:
+  pull_request:
+    branches: [main]
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+concurrency:
+  group: ci-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      # pnpm·node·의존성 — installer.yml 과 같은 준비
+      - uses: ./.github/actions/setup-build
+      # typecheck + 번들. vitest 의 vault_verify.py 대조와 e2e 가 이 산출물을 쓴다
+      - run: pnpm build
+      - run: pnpm lint
+      - run: pnpm test
+      # 부하 높은 러너에서는 60초 timeout 으로 무관한 spec 이 흔들린다(CLAUDE.md § 테스트 인프라) — 한 번만 다시 돌린다
+      - run: pnpm exec playwright test --retries 1
+      - name: Stray app processes must be zero
+        run: pnpm test:e2e:stray
+      - uses: actions/upload-artifact@v4
+        if: failure()
+        with:
+          name: e2e-results
+          retention-days: 3
+          path: test-results/
+          if-no-files-found: ignore

@@ -1,0 +1,5 @@
+#!/bin/sh
+# SIGTERM 을 무시한다 — 강제 종료로 넘어가는지 확인한다
+trap '' TERM
+echo "$$" > "$HOME/installer.pid"
+while true; do sleep 1; done

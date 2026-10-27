@@ -1,0 +1,7 @@
+#!/bin/sh
+# 가짜 설치 스크립트 — 공식 설치기처럼 $HOME/.local/bin 에 CLI 를 놓는다
+echo "Downloading..."
+mkdir -p "$HOME/.local/bin"
+printf '#!/bin/sh\necho "2.1.0 (Claude Code)"\n' > "$HOME/.local/bin/claude"
+chmod +x "$HOME/.local/bin/claude"
+echo "Installation complete"

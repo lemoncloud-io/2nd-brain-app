@@ -1,0 +1,196 @@
+name: installer
+
+# 설치본 빌드 + 설치 스모크. Windows·macOS 러너는 과금 배수가 커서 설치기 경로가 바뀔 때와 수동 실행만.
+on:
+  workflow_dispatch:
+  push:
+    paths:
+      - electron-builder.yml
+      - build/**
+      - scripts/after-pack.mjs
+      - scripts/installer-test/**
+      - .github/workflows/installer.yml
+      - .github/actions/setup-build/**
+
+concurrency:
+  group: installer-${{ github.ref }}
+  cancel-in-progress: true
+
+permissions:
+  contents: read
+
+jobs:
+  windows:
+    runs-on: windows-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-build
+      # --publish never: publish 설정이 있으면 electron-builder 가 CI 에서 태그 없이도 올리려 한다
+      # (app-builder-lib publish/PublishManager — CI 기본 onTagOrDraft, github 은 태그 검사를 건너뛴다)
+      - run: pnpm build:win --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: windows-installer
+          # 한 번에 350–600MB — 기본 90일 보관이면 저장 한도가 차서 다음 스모크가 업로드에서 멈춘다
+          retention-days: 3
+          path: dist/*-setup.exe
+          if-no-files-found: error
+      - name: Silent install
+        shell: pwsh
+        run: |
+          $setup = Get-ChildItem dist -Filter '*-setup.exe' | Select-Object -First 1
+          if (-not $setup) { throw 'no *-setup.exe in dist' }
+          $p = Start-Process -FilePath $setup.FullName -ArgumentList '/S' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "installer exit $($p.ExitCode)" }
+          $exe = Get-ChildItem "$env:LOCALAPPDATA\Programs" -Recurse -Filter '2nd-brain.exe' | Select-Object -First 1
+          if (-not $exe) { throw 'installed exe not found under %LOCALAPPDATA%\Programs' }
+          "install dir: $($exe.DirectoryName)"
+          Get-ChildItem $exe.DirectoryName -Filter 'Uninstall*.exe' | ForEach-Object { "uninstaller: $($_.Name)" }
+          "APP_EXE=$($exe.FullName)" >> $env:GITHUB_ENV
+          "INSTALL_DIR=$($exe.DirectoryName)" >> $env:GITHUB_ENV
+          "SETUP_EXE=$($setup.FullName)" >> $env:GITHUB_ENV
+      - name: Launch smoke
+        shell: pwsh
+        run: |
+          $app = Start-Process -FilePath $env:APP_EXE -PassThru
+          Start-Sleep -Seconds 10
+          if ($app.HasExited) { throw "app exited within 10s (code $($app.ExitCode))" }
+          # 실측 기록용 — build/uninstall-targets.json 의 win 경로가 이 출력에서 온다
+          Get-ChildItem $env:APPDATA, $env:LOCALAPPDATA -Directory | Where-Object Name -like '*2nd-brain*' | ForEach-Object { "app data: $($_.FullName)" }
+          taskkill /pid $app.Id /T /F | Out-Null
+      # 언인스톨러 판정용 가짜 트리 — build/uninstall-targets.json 의 win 경로를 그대로 심는다. 마커는 codex.config 만 뺀다:
+      # 설정 마커가 없는 엔진의 설정(~\.codex\config.toml)이 살아남는지가 마커 게이트의 증거다.
+      - name: Plant fake CLI trees and markers
+        shell: pwsh
+        run: |
+          $p = $env:USERPROFILE
+          $dirs = @("$p\.local\bin", "$p\.local\share\claude\versions", "$p\.local\state\claude", "$p\.cache\claude",
+                    "$p\.claude", "$p\.codex\packages\standalone\current\bin", "$env:LOCALAPPDATA\Programs\OpenAI\Codex",
+                    "$p\Documents\vault", "$env:APPDATA\2nd-brain-app\installed-cli")
+          New-Item -ItemType Directory -Force $dirs | Out-Null
+          foreach ($f in @("$p\.local\bin\claude.exe", "$p\.claude\settings.json", "$p\.claude.json",
+                           "$p\.codex\config.toml", "$p\.codex\packages\standalone\current\bin\codex.exe",
+                           "$p\Documents\vault\note.md")) { 'fake' | Set-Content $f }
+          # install.ps1 과 같은 모양 — bin 은 standalone 안을 가리키는 정션
+          New-Item -ItemType Junction -Path "$env:LOCALAPPDATA\Programs\OpenAI\Codex\bin" -Target "$p\.codex\packages\standalone\current\bin" | Out-Null
+          foreach ($n in 'claude', 'claude.config', 'codex') { New-Item -ItemType File -Force "$env:APPDATA\2nd-brain-app\installed-cli\$n" | Out-Null }
+          # 끊긴 설치의 기록 — 언인스톨러가 읽으면 안 된다
+          New-Item -ItemType File -Force "$env:APPDATA\2nd-brain-app\installed-cli\codex.config.pending" | Out-Null
+          if (-not (Test-Path "$env:LOCALAPPDATA\2nd-brain-app-updater")) { throw 'updater dir missing after launch — targets.json win.always is stale' }
+      # 새 버전 설치기는 옛 언인스톨러를 --updated 로 부른다 — 그 경로에서는 CLI·마커·앱 데이터가 살아야 한다
+      - name: Uninstall as an update keeps data and CLIs
+        shell: pwsh
+        run: |
+          # 설치기가 하는 그대로(installUtil.nsh:208-224): 언인스톨러를 설치 폴더 밖으로 복사한 뒤 _?= 로 제자리 실행한다.
+          # 설치 폴더 안의 exe 로 _?= 를 주면 un.atomicRMDir 이 자기 자신을 옮기지 못해 exit 2 로 중단된다(CI 35590303312 실측).
+          $un = Join-Path $env:RUNNER_TEMP 'old-uninstaller.exe'
+          Copy-Item (Join-Path $env:INSTALL_DIR 'Uninstall 2nd-brain.exe') $un
+          $p = Start-Process -FilePath $un -ArgumentList '/S', '/KEEP_APP_DATA', '--updated', "_?=$env:INSTALL_DIR" -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "uninstaller exit $($p.ExitCode)" }
+          if (Test-Path $env:APP_EXE) { throw 'update uninstall left the app exe' }
+          $u = $env:USERPROFILE
+          $keep = @("$env:APPDATA\2nd-brain-app", "$env:APPDATA\2nd-brain-app\installed-cli\claude", "$env:LOCALAPPDATA\2nd-brain-app-updater",
+                    "$u\.local\bin\claude.exe", "$u\.local\share\claude", "$u\.local\state\claude", "$u\.cache\claude",
+                    "$u\.claude", "$u\.claude.json",
+                    "$u\.codex\packages\standalone", "$env:LOCALAPPDATA\Programs\OpenAI\Codex\bin")
+          $lost = $keep | Where-Object { -not (Test-Path $_) }
+          if ($lost) { throw "update uninstall removed: $($lost -join ', ')" }
+      - name: Reinstall silently
+        shell: pwsh
+        run: |
+          $p = Start-Process -FilePath $env:SETUP_EXE -ArgumentList '/S' -Wait -PassThru
+          if ($p.ExitCode -ne 0) { throw "installer exit $($p.ExitCode)" }
+          if (-not (Test-Path $env:APP_EXE)) { throw 'app exe missing after reinstall' }
+      # 사용자가 하는 그대로(_?= 없이) 돌린다 — 언인스톨러가 자기를 %TEMP% 로 복사해 설치 폴더까지 지운다.
+      # 그래서 원 프로세스는 바로 끝나고 exit code 도 의미가 없다. 삭제 완료는 대상 경로 전부가 사라지는 것으로 기다린다 —
+      # 설치 폴더만 보면 안 된다: 템플릿은 설치 폴더(uninstaller.nsh:185)를 앱 데이터(:238)보다 먼저 지운다.
+      - name: Silent uninstall removes the app, its data and the marked CLIs
+        shell: pwsh
+        run: |
+          $un = Join-Path $env:INSTALL_DIR 'Uninstall 2nd-brain.exe'
+          Start-Process -FilePath $un -ArgumentList '/S' -Wait
+          # 판정은 사용자가 쓰는 검사 스크립트 그대로(정본 json 전체를 본다). codex.config 마커를 안 심었으니 %USERPROFILE%\.codex 는
+          # 남아야 한다 — 그 한 줄만 남고 exit 1 이 정답이다(설정 마커 게이트의 증거).
+          $deadline = (Get-Date).AddMinutes(3)
+          # 문서가 사용자에게 시키는 그대로 Windows PowerShell 5.1(powershell.exe)로 부른다 — pwsh 7 만 통과하는 스크립트를 걸러낸다
+          do {
+            $out = @(& powershell.exe -NoProfile -ExecutionPolicy Bypass -File scripts/installer-test/check-residue.ps1 2>&1)
+            $code = $LASTEXITCODE
+            # 0·1 = 판정 가능, 64 이상 = 스크립트 오류 — 둘 다 더 기다릴 이유가 없다
+            if ($code -le 1 -or $code -ge 64) { break }
+            Start-Sleep -Seconds 2
+          } while ((Get-Date) -lt $deadline)
+          $out | ForEach-Object { "$_" }
+          if ($code -ne 1) { throw "check-residue exit $code (expected 1: only ~\.codex, waited 3 min)" }
+          $left = @($out | Where-Object { $_ -like 'left: *' })
+          if ($left.Count -ne 1 -or $left[0] -notlike "left: $env:USERPROFILE\.codex (codex.config)") { throw "unexpected residue: $($left -join ', ')" }
+          # 볼트는 언제나 남는다
+          $u = $env:USERPROFILE
+          foreach ($f in @("$u\.codex\config.toml", "$u\Documents\vault\note.md")) {
+            if (-not (Test-Path $f)) { throw "uninstall deleted a file it must not touch: $f" }
+          }
+          'residue: only the unmarked ~\.codex, as expected'
+          # GitHub 의 pwsh 스텝은 마지막 $LASTEXITCODE(check-residue 의 1)를 스텝 결과로 쓴다 — 판정은 위에서 끝났다
+          exit 0
+
+  macos:
+    runs-on: macos-latest
+    timeout-minutes: 40
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: false
+      - uses: ./.github/actions/setup-build
+      - run: pnpm build && pnpm exec electron-builder --mac dmg --publish never
+      - uses: actions/upload-artifact@v4
+        with:
+          name: macos-installer
+          # 한 번에 350–600MB — 기본 90일 보관이면 저장 한도가 차서 다음 스모크가 업로드에서 멈춘다
+          retention-days: 3
+          path: dist/*.dmg
+          if-no-files-found: error
+      # 사용자 경로 그대로 — dmg 를 마운트해 /Applications 로 복사한다. 루트의 언인스톨러도 같이 있어야 한다
+      - name: Install from the dmg
+        run: |
+          dmg=$(/bin/ls dist/*.dmg | head -1)
+          hdiutil attach "$dmg" -nobrowse -readonly -mountpoint "$RUNNER_TEMP/dmg"
+          test -f "$RUNNER_TEMP/dmg/Uninstall 2nd-brain.command"
+          cp -R "$RUNNER_TEMP/dmg/2nd-brain.app" /Applications/
+          # 복사 직후에는 Spotlight 가 볼륨을 물고 있을 수 있다(resource busy) — 한 번 쉬고 강제 분리
+          hdiutil detach "$RUNNER_TEMP/dmg" || { sleep 3; hdiutil detach "$RUNNER_TEMP/dmg" -force; }
+          test -x "/Applications/2nd-brain.app/Contents/MacOS/2nd-brain"
+          test -f "/Applications/2nd-brain.app/Contents/Resources/Uninstall 2nd-brain.command"
+      - name: Launch smoke
+        run: |
+          open -a "/Applications/2nd-brain.app"
+          sleep 10
+          pgrep -f "/Applications/2nd-brain.app/Contents/MacOS/" || { echo 'app is not running after 10s' >&2; exit 1; }
+          # 실측 기록용 — build/uninstall-targets.json 의 mac 경로가 이 출력에서 온다
+          /bin/ls -d "$HOME/Library/Application Support/2nd-brain-app" ~/Library/Preferences/io.lemoncloud.2nd-brain-desktop.plist 2>/dev/null || true
+          test -d "$HOME/Library/Application Support/2nd-brain-app"
+          pkill -f "/Applications/2nd-brain.app/Contents/MacOS/"
+          sleep 2
+      # 언인스톨러 판정용 가짜 트리 — 정본 mac 경로 그대로. 마커 4개 전부: 설정 마커 게이트는 vitest(uninstall-mac.test.ts)가 보고,
+      # 여기서는 사용자가 하는 그대로(번들 안 사본을 bash 로) 돌려 --check 0 을 본다
+      - name: Plant fake CLI trees and markers
+        run: |
+          mkdir -p ~/.local/bin ~/.local/share/claude/versions ~/.local/state/claude ~/.cache/claude ~/.claude \
+                   ~/.codex/packages/standalone/current/bin ~/Documents/vault "$HOME/Library/Application Support/2nd-brain-app/installed-cli"
+          for f in ~/.local/bin/claude ~/.claude/settings.json ~/.claude.json ~/.codex/config.toml \
+                   ~/.codex/packages/standalone/current/bin/codex ~/.local/bin/codex-code-mode-host ~/Documents/vault/note.md; do echo fake > "$f"; done
+          ln -s ~/.codex/packages/standalone/current/bin/codex ~/.local/bin/codex
+          for n in claude claude.config codex codex.config; do : > "$HOME/Library/Application Support/2nd-brain-app/installed-cli/$n"; done
+          : > "$HOME/Library/Application Support/2nd-brain-app/installed-cli/claude.pending"
+      - name: Uninstall from the bundled copy removes the app, its data and the marked CLIs
+        run: |
+          bash "/Applications/2nd-brain.app/Contents/Resources/Uninstall 2nd-brain.command" --yes
+          test ! -e "/Applications/2nd-brain.app"
+          test ! -e "$HOME/Library/Application Support/2nd-brain-app"
+          # 재배치본은 자기를 지운다
+          test -z "$(/bin/ls "${TMPDIR:-/tmp}"/uninstall-2nd-brain.* 2>/dev/null)"
+          # 볼트는 언제나 남는다
+          test -f ~/Documents/vault/note.md
+          bash build/uninstall-mac.command --check

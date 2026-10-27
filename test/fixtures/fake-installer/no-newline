@@ -1,0 +1,4 @@
+#!/bin/sh
+printf 'first\n'
+printf 'last words'
+exit 3

@@ -1,0 +1,6 @@
+#!/bin/sh
+# e2e 용 — 로그인 상태까지 답하는 가짜 Codex CLI(fake-codex/logged-out)를 공식 설치 위치에 놓는다
+mkdir -p "$HOME/.local/bin"
+cp "$(dirname "$0")/../fake-codex/logged-out/codex" "$HOME/.local/bin/codex"
+chmod +x "$HOME/.local/bin/codex"
+echo "Codex CLI 0.155.1 installed successfully."

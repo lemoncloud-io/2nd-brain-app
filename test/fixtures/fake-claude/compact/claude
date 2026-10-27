@@ -1,0 +1,8 @@
+#!/bin/sh
+# fake claude: `/compact` 가 앞부분을 요약으로 바꾼 실행 — compact_boundary 줄이 그 지점이다
+cat <<'JSON'
+{"type":"system","subtype":"init","session_id":"s-9","model":"claude-opus-5[1m]","cwd":"/vault"}
+{"type":"system","subtype":"compact_boundary","compact_metadata":{"trigger":"manual","pre_tokens":150000}}
+{"type":"result","subtype":"success","is_error":false,"usage":{"iterations":[{"input_tokens":10,"cache_read_input_tokens":30000,"cache_creation_input_tokens":0,"output_tokens":5}]},"modelUsage":{"claude-opus-5[1m]":{"contextWindow":200000}}}
+JSON
+exit 0
