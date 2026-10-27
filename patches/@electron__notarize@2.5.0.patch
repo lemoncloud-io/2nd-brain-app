@@ -1,0 +1,34 @@
+diff --git a/lib/check-signature.js b/lib/check-signature.js
+index 324568af71bcc4372c9f959131ecd24122848c86..d2a2139fe05eaaf6ec5c0caa1cb76b8e990c9992 100644
+--- a/lib/check-signature.js
++++ b/lib/check-signature.js
+@@ -41,14 +41,14 @@ const spawn_1 = require("./spawn");
+ const debug_1 = __importDefault(require("debug"));
+ const d = (0, debug_1.default)('electron-notarize');
+ const codesignDisplay = (opts) => __awaiter(void 0, void 0, void 0, function* () {
+-    const result = yield (0, spawn_1.spawn)('codesign', ['-dv', '-vvvv', '--deep', path.basename(opts.appPath)], {
++    const result = yield (0, spawn_1.spawn)('codesign', ['-dv', '-vvvv', '--deep', './' + path.basename(opts.appPath)], {
+         cwd: path.dirname(opts.appPath),
+     });
+     return result;
+ });
+ const codesign = (opts) => __awaiter(void 0, void 0, void 0, function* () {
+     d('attempting to check codesign of app:', opts.appPath);
+-    const result = yield (0, spawn_1.spawn)('codesign', ['-vvv', '--deep', '--strict', path.basename(opts.appPath)], {
++    const result = yield (0, spawn_1.spawn)('codesign', ['-vvv', '--deep', '--strict', './' + path.basename(opts.appPath)], {
+         cwd: path.dirname(opts.appPath),
+     });
+     return result;
+diff --git a/lib/staple.js b/lib/staple.js
+index 47dbd85b2fc279d999b57f47fb8171e1cc674436..f18232961aaf220001d8aef176dc28eec7e86bd7 100644
+--- a/lib/staple.js
++++ b/lib/staple.js
+@@ -43,7 +43,7 @@ const d = (0, debug_1.default)('electron-notarize:staple');
+ function stapleApp(opts) {
+     return __awaiter(this, void 0, void 0, function* () {
+         d('attempting to staple app:', opts.appPath);
+-        const result = yield (0, spawn_1.spawn)('xcrun', ['stapler', 'staple', '-v', path.basename(opts.appPath)], {
++        const result = yield (0, spawn_1.spawn)('xcrun', ['stapler', 'staple', '-v', './' + path.basename(opts.appPath)], {
+             cwd: path.dirname(opts.appPath),
+         });
+         if (result.code !== 0) {
