@@ -30,7 +30,7 @@
 ## What it is
 
 Connect Claude or Codex, drop in material, and approve the pages the AI writes one by one. The wiki you end up with is
-linked, drawn as a graph, and ready to search and ask about. The Korean [README](README.md) has the full feature reference.
+linked, drawn as a graph, and ready to search and ask about.
 
 ```mermaid
 flowchart LR
@@ -79,6 +79,49 @@ Keyword search (BM25, title-weighted, Korean partial matching) finds documents b
 A 3D graph you can turn around. The more links a page has, the bigger and brighter it looks. Point at a node to keep only its neighbors; click it to open that page beside the graph.
 
 > These screens use a sample vault of about 80 pages of AI-agent notes.
+
+## Features
+
+**Setup and vault**
+
+- Five-step first run — what to organize, AI connection (the app installs and signs in the Claude Code or Codex CLI), GitHub sign-in, vault creation, push to GitHub
+- The vault is a git repository — every change is a commit; each document has history, diff and restore
+- Open an existing Obsidian folder as is, or turn it into a vault without touching your files
+
+**Material and wiki-fying**
+
+- Add material — text, URLs, PDF, Hangul (hwp, hwpx), Word, Excel and PowerPoint become text; clip the page open in a web tab
+- Wiki-fy — the AI drafts wiki pages on a work branch; only pages you read and approve enter the wiki
+- Check — structure checks plus an AI review (contradictions, stale content, missing pages, duplicates), and merging two duplicate pages
+
+**Read and write**
+
+- Live-preview editor — `[[` autocomplete, templates, image paste, AI rewrite of a selection
+- Link previews, backlinks and broken links under each page
+- Tabs, split view, web tabs, tags and bookmarks (same file as Obsidian), ⌘K and ⌘P
+- Today note — open items from earlier notes and today's to-dos in one line
+- Previews for images, PDF, audio, video, Word, PowerPoint and Obsidian Bases
+
+**Find and graph**
+
+- Keyword search (BM25) with Korean partial matching, filtered by tag or file type
+- 3D link graph with a growth replay
+
+**Chat**
+
+- Always open on the right (⌘J); one AI session per conversation keeps the context
+- Attach documents with `@`, paste images, read GitHub PRs, issues and web pages, run `/` skills and MCP servers
+- Files an answer writes get a card to review and undo hunk by hunk; out-of-scope tools ask for approval
+
+**Teams**
+
+- One GitHub sign-in to create a team vault, invite people and join
+- Change alerts with one-click pull; your edits go out as review requests (PRs), or straight to a repository only you use
+- Never pushes to a public repository
+
+**Also**
+
+- Korean and English screens, light and dark themes, app updates, local-only diagnostic logs and export
 
 ## Getting started
 
