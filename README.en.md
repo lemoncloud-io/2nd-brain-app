@@ -1,8 +1,5 @@
 <p align="center">
-  <picture>
-    <source media="(prefers-color-scheme: dark)" srcset="docs/brand/lockups/2nd-brain-horizontal-dark.svg">
-    <img src="docs/brand/lockups/2nd-brain-horizontal-light.svg" alt="2nd-brain" height="72">
-  </picture>
+  <img src="docs/media/banner.svg" alt="2nd-brain" width="560">
 </p>
 
 <h3 align="center">A personal wiki the AI writes and you approve</h3>
