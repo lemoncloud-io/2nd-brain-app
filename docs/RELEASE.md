@@ -67,3 +67,7 @@ hardened runtime 은 Developer ID 서명에서만 켜져 ad-hoc 빌드로는 확
 
 켜진 앱은 시작 30초 뒤와 6시간마다 새 버전을 보고, 있으면 받아 둔다. 설치는 사람이 "다시 시작" 을 누르거나
 앱을 닫을 때 된다.
+
+`patches/@electron__notarize@2.5.0.patch` — `@electron/notarize` 는 `codesign` 에 `2nd-brain.app` 처럼 앱 이름만 넘기는데,
+`codesign` 은 숫자로 시작하는 인자를 프로세스 번호로 읽어 `No such process` 로 실패한다. 패치가 `./` 를 붙인다.
+electron-builder 를 올려 `@electron/notarize` 버전이 바뀌면 이 패치도 다시 본다.
