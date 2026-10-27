@@ -1,12 +1,16 @@
+<img src="docs/media/hero-ko.svg" width="1200" alt="2nd-brain — AI가 쓰고, 사람이 승인하는 개인 위키. 자료를 넣으면 AI가 위키 초안을 쓰고, 사람이 승인한 페이지가 링크로 이어져 그래프로 자라고, 채팅이 그 위키를 근거로 답한다.">
+
 <p align="center">
-  <img src="docs/media/banner.svg" alt="2nd-brain" width="420">
+  <b>자료를 모으면 AI가 위키로 정리하고, 사람은 페이지마다 확인만 합니다.</b><br>
+  터미널도, git도, Obsidian 설정도 필요 없는 데스크톱 앱.
 </p>
 
-<h3 align="center">AI가 쓰고, 사람이 승인하는 개인 위키</h3>
-
 <p align="center">
-  자료를 모으면 AI가 위키로 정리하고, 사람은 페이지마다 확인만 합니다.<br>
-  터미널도, git도, Obsidian 설정도 필요 없는 데스크톱 앱.
+  <a href="#화면">화면</a> ·
+  <a href="#시작하기">시작하기</a> ·
+  <a href="#기능">기능</a> ·
+  <a href="#자주-묻는-질문">자주 묻는 질문</a> ·
+  <a href="#개발">개발</a>
 </p>
 
 <p align="center">
@@ -16,26 +20,8 @@
   <a href="README.en.md"><img alt="English" src="https://img.shields.io/badge/README-English-20242C?labelColor=20242C&color=20242C"></a>
 </p>
 
-<p align="center">
-  <img src="docs/media/graph-growth.gif" alt="위키가 링크를 따라 한 점에서 2,359쪽으로 자라는 3D 그래프" width="720">
-</p>
-<p align="center"><sub>그래프의 <b>성장 재생</b> — 위키가 실제 링크를 따라 한 점에서 전체로 자랍니다.</sub></p>
-
----
-
-## 이런 앱이에요
-
-Claude 또는 Codex 를 연결하고, 자료를 끌어다 놓고, AI가 정리한 페이지를 하나씩 **승인**하면 개인 위키가 쌓입니다.
-위키는 링크로 이어져 그래프로 보이고, 검색과 채팅으로 바로 꺼내 쓸 수 있어요.
-
-```mermaid
-flowchart LR
-  A["자료 모으기<br/>글 · URL · PDF · 한글 · 엑셀 · 워드 · PPT"] --> B["AI 위키화<br/>작업 브랜치에 커밋"]
-  B --> C{"사람이 페이지별로<br/>승인 · 원복"}
-  C -->|승인| D["위키에 병합"]
-  C -->|거절| E["원복"]
-  D --> F["읽기 · 검색 · 그래프 · 채팅"]
-```
+**2nd-brain 은 읽은 것을 AI가 위키로 엮고, 사람이 승인한 것만 남기는 개인 위키 앱입니다.** Claude 또는 Codex 를 연결하고
+자료를 끌어다 놓으면, AI가 링크로 이어진 위키 페이지를 쓰고 사람이 하나씩 확인합니다.
 
 - **터미널 없이.** Claude·Codex CLI 는 앱이 직접 설치하고 로그인까지 이어 줍니다. 다른 선행 설치가 없어요.
 - **내 계정, 서버 없음.** 내 AI 구독과 GitHub 계정으로 돌고, 이 프로젝트는 서버·구독·결제를 두지 않습니다.
@@ -45,6 +31,11 @@ flowchart LR
 - **한국어 · English.** 화면 언어를 설정에서 바꿀 수 있어요.
 
 ## 화면
+
+<p align="center">
+  <img src="docs/media/graph-growth.gif" alt="위키가 링크를 따라 한 점에서 2,359쪽으로 자라는 3D 그래프" width="720">
+</p>
+<p align="center"><sub>그래프의 <b>성장 재생</b> — 위키가 실제 링크를 따라 한 점에서 전체로 자랍니다.</sub></p>
 
 ### 읽고 쓰기
 
@@ -58,21 +49,16 @@ flowchart LR
 왼쪽 파일 트리, 가운데 문서, 오른쪽 채팅 칸. 문서는 읽으면서 바로 고치는 라이브 미리보기 편집기이고, `[[링크]]` 는 마우스를 올리면 그 페이지 앞부분이 곁에 뜹니다.
 오른쪽 채팅에는 "오늘 노트 만들어줘" 처럼 말로 일을 시킵니다. 답은 되돌리기 카드와 함께 파일로 남아요.
 
-### 찾기
+### 찾기와 그래프
 
 <p align="center">
-  <img src="docs/media/ko-search.png" alt="키워드 검색 결과와 강조된 스니펫" width="860">
+  <img src="docs/media/ko-search.png" alt="키워드 검색 결과와 강조된 스니펫" width="49%">
+  <img src="docs/media/ko-graph.png" alt="wikilink 로 이어진 페이지를 3D 로 그린 그래프" width="49%">
 </p>
+<p align="center"><sub>한글 부분 일치 키워드 검색 · 링크로 이어진 페이지의 3D 그래프</sub></p>
 
-키워드 검색(BM25, 제목 가중, 한글 부분 일치)은 문서를 내용으로, PDF·그림 같은 파일을 이름으로 찾습니다.
-
-### 그래프
-
-<p align="center">
-  <img src="docs/media/ko-graph.png" alt="wikilink 로 이어진 페이지를 3D 로 그린 그래프" width="860">
-</p>
-
-링크로 이어진 페이지를 돌려 볼 수 있는 3D 그래프. 많이 이어진 페이지일수록 크고 밝게 보이고, 점을 짚으면 이웃만 남기고, 누르면 그 페이지를 옆 칸에 엽니다.
+검색은 문서를 내용으로, PDF·그림 같은 파일을 이름으로 찾습니다. 그래프는 많이 이어진 페이지일수록 크고 밝게 보이고,
+점을 누르면 그 페이지를 옆 칸에 엽니다.
 
 > 위 화면은 AI 에이전트 운영 노트 80여 쪽으로 만든 예시 보관함입니다.
 
@@ -131,6 +117,46 @@ pnpm dev
 **그 밖**
 
 - 한국어·영어 화면, 라이트·다크 테마, 앱 업데이트, 이 컴퓨터에만 남는 진단 기록과 내보내기
+
+## 자주 묻는 질문
+
+<details>
+<summary><b>무료인가요?</b></summary>
+
+앱은 MIT 라이선스 오픈소스라 무료입니다. AI 는 내가 쓰는 Claude 또는 Codex 계정으로 돌고, 이 프로젝트는 따로 구독·결제를 받지 않습니다.
+
+</details>
+
+<details>
+<summary><b>내 자료는 어디에 저장되나요?</b></summary>
+
+보관함은 내 컴퓨터의 폴더(git 저장소)입니다. 이 프로젝트에는 서버가 없어요. 밖으로 나가는 것은 AI 프로그램에 보내는 질문·문서와,
+GitHub 에 올리기를 고른 보관함뿐입니다. 공개 저장소에는 올리지 않습니다.
+
+</details>
+
+<details>
+<summary><b>AI 가 위키를 잘못 고치면요?</b></summary>
+
+위키화는 따로 떼어 둔 작업 공간에서 돌고, 사람이 승인한 페이지만 위키에 들어갑니다. 거절한 페이지는 원래대로 돌아가고,
+넣은 직후에는 되돌리기가 있습니다. 모든 변경이 커밋이라 문서 기록에서 예전 버전으로 돌아갈 수도 있어요.
+
+</details>
+
+<details>
+<summary><b>Obsidian 이 있어야 하나요?</b></summary>
+
+아니요. 읽고 쓰고 찾는 것은 앱 하나로 됩니다. 보관함은 평범한 마크다운 폴더라 Obsidian 으로 열어도 되고,
+쓰던 Obsidian 폴더를 앱에서 열 수도 있어요.
+
+</details>
+
+<details>
+<summary><b>어떤 컴퓨터에서 되나요?</b></summary>
+
+Apple Silicon mac(arm64)과 Windows x64 입니다. Intel mac·Linux 설치본은 없습니다.
+
+</details>
 
 ## 설치와 삭제
 

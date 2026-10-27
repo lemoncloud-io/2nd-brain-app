@@ -1,12 +1,15 @@
+<img src="docs/media/hero-en.svg" width="1200" alt="2nd-brain — the AI writes, you approve: a personal wiki. You add material, the AI drafts wiki pages, the pages you approve link up and grow into a graph, and the chat answers from that wiki.">
+
 <p align="center">
-  <img src="docs/media/banner.svg" alt="2nd-brain" width="420">
+  <b>Drop in your material, the AI turns it into wiki pages, and you review them page by page.</b><br>
+  A desktop app: no terminal, no git, no Obsidian setup.
 </p>
 
-<h3 align="center">A personal wiki the AI writes and you approve</h3>
-
 <p align="center">
-  Drop in your material, the AI turns it into wiki pages, and you review them page by page.<br>
-  A desktop app: no terminal, no git, no Obsidian setup.
+  <a href="#screens">Screens</a> ·
+  <a href="#features">Features</a> ·
+  <a href="#getting-started">Getting started</a> ·
+  <a href="#faq">FAQ</a>
 </p>
 
 <p align="center">
@@ -16,26 +19,8 @@
   <a href="README.md"><img alt="한국어" src="https://img.shields.io/badge/README-한국어-20242C?labelColor=20242C&color=20242C"></a>
 </p>
 
-<p align="center">
-  <img src="docs/media/graph-growth.gif" alt="A 3D graph of a wiki growing from a single point to 2,359 pages along its links" width="720">
-</p>
-<p align="center"><sub>The graph's <b>growth replay</b>: the wiki grows from one point to the whole, following its real links. (Captions in the clip are Korean.)</sub></p>
-
----
-
-## What it is
-
-Connect Claude or Codex, drop in material, and approve the pages the AI writes one by one. The wiki you end up with is
-linked, drawn as a graph, and ready to search and ask about.
-
-```mermaid
-flowchart LR
-  A["Collect<br/>text · URL · PDF · Hangul · Excel · Word · PowerPoint"] --> B["AI wiki-fies<br/>commits on a work branch"]
-  B --> C{"You review<br/>page by page"}
-  C -->|approve| D["Merged into the wiki"]
-  C -->|reject| E["Reverted"]
-  D --> F["Read · search · graph · chat"]
-```
+**2nd-brain turns what you read into a wiki the AI writes and you approve.** Connect Claude or Codex, drop in material,
+and the AI writes linked wiki pages that you check one by one.
 
 - **No terminal.** The app installs the Claude or Codex CLI and walks you through sign-in. Nothing else to install first.
 - **Your accounts, no server.** It runs on your own AI subscription and GitHub account; this project runs no server, subscription or billing.
@@ -45,6 +30,11 @@ flowchart LR
 - **Korean and English** screens, switchable in settings.
 
 ## Screens
+
+<p align="center">
+  <img src="docs/media/graph-growth.gif" alt="A 3D graph of a wiki growing from a single point to 2,359 pages along its links" width="720">
+</p>
+<p align="center"><sub>The graph's <b>growth replay</b>: the wiki grows from one point to the whole, following its real links. (Captions in the clip are Korean.)</sub></p>
 
 ### Read and write
 
@@ -58,21 +48,16 @@ flowchart LR
 File tree, document, chat. Documents are a live-preview editor, so you read and edit in one place, and hovering a `[[link]]` previews that page.
 In the chat on the right you ask for things in plain words ("Create today's note"); answers land as files with an undo card.
 
-### Find
+### Find and graph
 
 <p align="center">
-  <img src="docs/media/en-search.png" alt="Keyword search results with highlighted snippets" width="860">
+  <img src="docs/media/en-search.png" alt="Keyword search results with highlighted snippets" width="49%">
+  <img src="docs/media/en-graph.png" alt="A 3D graph of pages linked by wikilinks" width="49%">
 </p>
+<p align="center"><sub>Keyword search with Korean partial matching · A 3D graph of linked pages</sub></p>
 
-Keyword search (BM25, title-weighted, Korean partial matching) finds documents by content and files such as PDFs and images by name.
-
-### Graph
-
-<p align="center">
-  <img src="docs/media/en-graph.png" alt="A 3D graph of pages linked by wikilinks" width="860">
-</p>
-
-A 3D graph you can turn around. The more links a page has, the bigger and brighter it looks. Point at a node to keep only its neighbors; click it to open that page beside the graph.
+Search finds documents by content and files such as PDFs and images by name. In the graph, pages with more links look
+bigger and brighter; click one to open it beside the graph.
 
 > These screens use a sample vault of about 80 pages of AI-agent notes.
 
@@ -135,6 +120,46 @@ pnpm build:mac  # mac arm64 dmg
 ```
 
 Contributions: [CONTRIBUTING.md](CONTRIBUTING.md). Security reports: [SECURITY.md](SECURITY.md). Architecture notes are in [CLAUDE.md](CLAUDE.md), product assumptions in [PRODUCT.md](PRODUCT.md), design rules in [DESIGN.md](DESIGN.md), and past decisions in [`docs/decisions/`](docs/decisions) (Korean).
+
+## FAQ
+
+<details>
+<summary><b>Is it free?</b></summary>
+
+The app is open source under the MIT license. The AI runs on your own Claude or Codex account; this project charges no subscription.
+
+</details>
+
+<details>
+<summary><b>Where does my data live?</b></summary>
+
+The vault is a folder (a git repository) on your computer. This project has no server. The only things that leave your
+machine are the questions and documents sent to your AI program, and the vault if you choose to push it to GitHub. It never pushes to a public repository.
+
+</details>
+
+<details>
+<summary><b>What if the AI gets a page wrong?</b></summary>
+
+Wiki-fying runs in a separate workspace, and only pages you approve enter the wiki. Rejected pages go back to how they
+were, and you can undo right after merging. Every change is a commit, so a document's history can take you back to any earlier version.
+
+</details>
+
+<details>
+<summary><b>Do I need Obsidian?</b></summary>
+
+No. Reading, writing and search all happen in the app. The vault is a plain Markdown folder, so it also opens in Obsidian,
+and you can open an existing Obsidian folder in the app.
+
+</details>
+
+<details>
+<summary><b>Which computers does it run on?</b></summary>
+
+Apple Silicon Macs (arm64) and Windows x64. There are no Intel Mac or Linux installers.
+
+</details>
 
 ## License
 
