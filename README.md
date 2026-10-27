@@ -18,9 +18,8 @@
 
 <p align="center">
   <img src="docs/media/graph-growth.gif" alt="위키가 링크를 따라 한 점에서 2,359쪽으로 자라는 3D 그래프" width="720">
-  <br>
-  <sub>그래프의 <b>성장 재생</b> — 위키가 실제 링크를 따라 한 점에서 전체로 자랍니다.</sub>
 </p>
+<p align="center"><sub>그래프의 <b>성장 재생</b> — 위키가 실제 링크를 따라 한 점에서 전체로 자랍니다.</sub></p>
 
 ---
 
