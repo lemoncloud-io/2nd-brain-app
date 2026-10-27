@@ -138,46 +138,32 @@ pnpm dev
 
 ## 설치와 삭제
 
-테스트용 비서명 빌드다 — 첫 실행은 mac 에서 `xattr -dr com.apple.quarantine "/Applications/2nd-brain.app"`
-(또는 차단 뒤 시스템 설정 → 개인정보 보호 및 보안 → "그래도 열기"; 우클릭 → 열기는 macOS 15 미만에서만), Windows 에서
-SmartScreen "추가 정보 → 실행" 이 필요하다. Claude·Codex CLI 는 설치본에 없고 첫 화면의 "설치" 버튼이 깐다.
+**mac** — dmg 를 열어 앱을 `Applications` 로 옮기세요. 지울 때는 dmg 안의 `Uninstall 2nd-brain.command` 를 터미널에서
+`bash` 로 실행하면 앱, 앱 데이터, 앱이 설치한 CLI 를 확인한 뒤 지웁니다.
 
-- **mac**: dmg 의 앱을 `/Applications` 로. 삭제는 dmg 루트(또는 앱 안 `Contents/Resources`)의
-  `Uninstall 2nd-brain.command` 를 터미널에서 `bash "<경로>"` 로 — 앱·앱 데이터·앱이 깐 CLI 를 확인 뒤 지운다
-  (`--yes` 묻지 않음 · `--check` 지우지 않고 남은 것만 세기).
-- **Windows**: `setup.exe`(per-user, 관리자 권한 없음). 삭제는 프로그램 추가/제거 또는 설치 폴더의
-  `Uninstall 2nd-brain.exe` — 앱이 깐 CLI 가 있으면 같이 지울지 한 번 묻는다. 무인은 `/S`.
-- **예전 이름(2nd-brain Desktop·eureka-wiki)으로 깐 경우**: 설정·대화·로그인은 그대로 이어진다(앱 데이터 폴더는 이름과 무관하게
-  `2nd-brain-app`). 보관함 기록의 옛 이름 커밋도 계속 앱이 만든 것으로 보인다. mac 은 새 `2nd-brain.app` 이 옛
-  `2nd-brain Desktop.app`·`eureka-wiki.app` 옆에 따로 깔리므로 옛 앱은 직접 휴지통으로 —
-  옛 언인스톨러를 돌리면 앱 데이터까지 지운다. Windows 는 appId·설치 폴더(`2nd-brain-app`)가 같아 기존 설치를 바꿀 것으로
-  본다 — 미검증, 첫 교체 설치 때 옛 바로 가기가 남는지 확인한다.
+**Windows** — `setup.exe` 를 실행하세요. 관리자 권한은 필요 없습니다. 아직 코드 서명이 없어서 SmartScreen 경고가 뜨면
+"추가 정보 → 실행" 을 누르세요. 지울 때는 "프로그램 추가/제거" 를 쓰면 됩니다.
 
-지우는 경로의 정본은 `build/uninstall-targets.json`, 절차·우회·수동 매트릭스·알려진 잔여물은 `docs/INSTALL-TEST.md`.
-볼트 폴더와 앱이 깔지 않은 CLI·설정은 어떤 경로에서도 건드리지 않는다.
+Claude·Codex CLI 는 설치본에 들어 있지 않고 첫 화면의 "설치" 버튼으로 받습니다. 어떤 방법으로 지워도 보관함 폴더와
+직접 설치한 CLI 는 건드리지 않습니다. 지우는 대상 목록은 `build/uninstall-targets.json`, 자세한 절차는
+[`docs/INSTALL-TEST.md`](docs/INSTALL-TEST.md) 에 있습니다.
 
 ## 개발
 
 ```sh
 pnpm install
 pnpm dev        # 개발 창
+pnpm lint
+pnpm typecheck
 pnpm test       # vitest
-pnpm test:e2e   # build 후 Playwright (e2e/**/*.spec.ts)
-pnpm build:mac  # mac arm64 dmg — ad-hoc 서명
-pnpm build:win  # Windows 에서만(mac 크로스 빌드는 mac 용 git 을 번들한다) — CI installer 워크플로가 만든다
+pnpm test:e2e   # 빌드 후 Playwright
+pnpm build:mac  # mac arm64 dmg (Windows 설치본은 CI 가 만든다)
 ```
 
-e2e 는 테스트마다 앱을 띄운다. 앱과 임시 폴더의 뒷정리는 spec 이 아니라 `e2e/fixtures.ts` 의 `launch`
-fixture 가 한다 — 단언이 깨지거나 시간 초과로 끊겨도 닫고 지운다. 임시 폴더는 실행마다 한 그루
-(`$TMPDIR/2nd-brain-e2e/<runId>`)라 `globalTeardown` 이 통째로 걷고, 하루 넘은 옛 그루는 다음 실행이
-걷는다. 앱을 띄우는 spec 은 `@playwright/test` 대신 `./fixtures` 에서 `test` 를 가져온다.
-`pnpm test:e2e:stray` 는 스위트가 끝난 뒤 남은 앱 프로세스를 센다(0 이어야 한다).
+- **CI** — main 으로 가는 PR 마다 macOS 에서 빌드·lint·vitest·e2e 를 돌립니다. 통과해야 머지됩니다.
+- **e2e** — 테스트마다 앱을 새로 띄웁니다. 앱을 띄우는 spec 은 `@playwright/test` 대신 `e2e/fixtures` 의 `test` 를
+  쓰세요. 테스트가 실패해도 앱과 임시 폴더를 정리해 줍니다.
+- **git·Python 없이 동작** — 앱은 git 을 `dugite` 로 번들하고, 병합 전 검증 스크립트는 TypeScript 로 옮겨
+  `src/main/verify/` 에 있습니다. 개발 PC 의 `python3` 는 원본 스크립트와 결과를 비교하는 테스트에서만 씁니다.
 
-CI(`.github/workflows/ci.yml`)는 main 으로 가는 PR 과 main push 마다 macOS 러너 하나에서 build(typecheck 포함)·lint·
-vitest·e2e(실패 spec 한 번 재시도)·남은 앱 프로세스 0 을 본다. Windows 는 아직 없다 — 설치본 스모크(`installer.yml`)만 돈다.
-`e2e/perf-vault.spec.ts` 는 240쪽 합성 볼트에서 열기·편집·태그·언급·검색이 한 동작 2초(점검 10초) 안인지 잰다.
-`KNOWLEDGE_VAULT=<볼트 경로>` 를 주면 그 볼트의 로컬 복제(`git clone --local`)로 잰다 — 원본은 열지 않는다.
-
-앱은 사용자 PC 의 git·Python 을 쓰지 않는다. git 은 `dugite` 번들, 병합 전 검증은 vault-kit 의
-`vault_verify.py`·`vault_volume.py` 를 옮긴 `src/main/verify/` 다. `pnpm test` 의 대조 테스트
-(`vault-verify.test.ts`)만 개발 PC 의 `python3` 로 원본을 같이 돌려 판정이 같은지 본다.
+더 자세한 구조와 규칙은 [CLAUDE.md](CLAUDE.md) 와 [CONTRIBUTING.md](CONTRIBUTING.md) 를 보세요.
